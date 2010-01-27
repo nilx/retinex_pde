@@ -1,0 +1,3 @@
+* rewrite README.txt
+* simplify and share io_tiff
+* drop getopt
