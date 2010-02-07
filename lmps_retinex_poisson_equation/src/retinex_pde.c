@@ -1,9 +1,6 @@
 /**
  * @file lib/src/algo_retinex_pde.c
  *
- * @author Catalina Sbert <catalina.sbert@uib.es>
- * @author Ana Belen Petro <anabelen.petro@uib.es>
- * @author Jean-Michel Morel <jean-michel.morel@cmla.ens-cachan.fr>
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  *
  * @todo adapt nb threads to the number of CPU available (OpenMP?)
@@ -40,22 +37,21 @@
  *     + (F_{i, j + 1} - F_{i, j}) \f$.
  * On the border, differences with "outside of the array" are 0.
  * If the absolute value of difference is < tmin, 0 is used instead;
- * if it is > tmax, +-tmax is used.
  *
  * @param data_out output array
  * @param data_in input array
  * @param nx, ny array size
- * @param tmin, tmax min/max threshold
+ * @param tmin threshold
  *
  * @return data_out
  *
  * @todo unloop?
  * @todo try using blas?
  */
-static float *mw4_discrete_laplacian_threshold(float *data_out,
+static float *discrete_laplacian_threshold(float *data_out,
                                                const float *data_in,
                                                size_t nx, size_t ny,
-                                               float tmin, float tmax)
+                                               float tmin)
 {
     int i, j;
     float *out_ptr;
@@ -82,34 +78,26 @@ static float *mw4_discrete_laplacian_threshold(float *data_out,
             if (0 < i)
             {
                 diff = *(in_ptr_xm1) - *in_ptr;
-                if (fabs(diff) > tmax)
-                    *out_ptr += (diff > 0 ? tmax : -tmax);
-                else if (fabs(diff) > tmin)
+                if (fabs(diff) > tmin)
                     *out_ptr += diff;
             }
             if ((int) nx - 1 > i)
             {
                 diff = *(in_ptr_xp1) - *in_ptr;
-                if (fabs(diff) > tmax)
-                    *out_ptr += (diff > 0 ? tmax : -tmax);
-                else if (fabs(diff) > tmin)
+                if (fabs(diff) > tmin)
                     *out_ptr += diff;
             }
             /* column differences */
             if (0 < j)
             {
                 diff = *(in_ptr_ym1) - *in_ptr;
-                if (fabs(diff) > tmax)
-                    *out_ptr += (diff > 0 ? tmax : -tmax);
-                else if (fabs(diff) > tmin)
+                if (fabs(diff) > tmin)
                     *out_ptr += diff;
             }
             if ((int) ny - 1 > j)
             {
                 diff = *(in_ptr_yp1) - *in_ptr;
-                if (fabs(diff) > tmax)
-                    *out_ptr += (diff > 0 ? tmax : -tmax);
-                else if (fabs(diff) > tmin)
+                if (fabs(diff) > tmin)
                     *out_ptr += diff;
             }
             in_ptr++;
@@ -131,19 +119,19 @@ static float *mw4_discrete_laplacian_threshold(float *data_out,
  *
  * @param data the dft complex coefficients, of size nx x ny
  * @param nx, ny data array size
- * @param u multiplication parameter for @f$ \hat{u}() @f$
  * @param m global multiplication parameter (DFT normalization)
  *
  * @return the data array, updated
  */
-static float *mw4_retinex_update_dft(float *data,
-                                     size_t nx, size_t ny, float u, float m)
+static float *retinex_update_dft(float *data,
+                                     size_t nx, size_t ny, float m)
 {
     float *data_ptr, *data_ptr_end;
     float *cosi_ptr, *cosi_ptr_end, *cosj_ptr, *cosj_ptr_end;
     float *factor_ptr;
     int i, j;
     float cst;
+    float u = 2.;
     /* static data, kept for a potential re-use */
     static float s_u = 0.;
     static float s_m = 0.;
@@ -252,8 +240,7 @@ static float *mw4_retinex_update_dft(float *data,
  * @param data input/output array
  * @param nx dimension
  * @param ny dimension
- * @param tmin, tmax retinex min/max threshold
- * @param u multiplication parameter for @f$ \hat{u}() @f$
+ * @param t retinex threshold
  *
  * @return data, or NULL if an error occured
  *
@@ -261,8 +248,8 @@ static float *mw4_retinex_update_dft(float *data,
  * @todo inplace fft
  * @todo split pre/run/post for multi-threading
  */
-float *mw4_retinex_pde(float *data,
-                       size_t nx, size_t ny, float tmin, float tmax, float u)
+float *retinex_pde(float *data,
+                       size_t nx, size_t ny, float t)
 {
     fftwf_plan dct_fw, dct_bw;
     float *data_fft, *data_tmp;
@@ -292,8 +279,8 @@ float *mw4_retinex_pde(float *data,
      */
 
     /* compute the laplacian and store it in data_tmp */
-    (void) mw4_discrete_laplacian_threshold(data_tmp, data,
-                                            nx, ny, tmin, tmax);
+    (void) discrete_laplacian_threshold(data_tmp, data,
+                                            nx, ny, t);
 
     /*
      * step two : DCT
@@ -312,8 +299,7 @@ float *mw4_retinex_pde(float *data,
      * step three : update the DCT result
      */
 
-    (void) mw4_retinex_update_dft(data_fft, nx, ny,
-                                  u, 1. / (float) (nx * ny));
+    (void) retinex_update_dft(data_fft, nx, ny, 1. / (float) (nx * ny));
 
     /*
      * step four : backward DCT
@@ -340,7 +326,3 @@ float *mw4_retinex_pde(float *data,
 #endif                          /* FFTW_NTHREADS */
     return data;
 }
-
-#ifdef CHECK
-#include "check_algo_retinex_pde.c"
-#endif                          /* CHECK */

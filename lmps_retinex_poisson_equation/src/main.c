@@ -95,8 +95,7 @@ int main(int argc, char *const *argv)
     /* run retinex on data_rtnx, normalize with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
     {
-	if (NULL == mw4_retinex_pde(data_rtnx + channel * nx * ny,
-				    nx, ny, t, 255., 2.))
+	if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t))
 	{
 	    fprintf(stderr, "the retinex PDE failed\n");
 	    free(data_rtnx);
