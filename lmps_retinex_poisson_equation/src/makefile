@@ -1,4 +1,4 @@
-CSRC	= io_tiff.c algo_normalize.c algo_retinex_pde.c retinex_pde.c
+CSRC	= io_tiff.c normalization.c retinex_pde.c main.c
 
 SRC	= $(CSRC)
 OBJ	= $(CSRC:.c=.o)

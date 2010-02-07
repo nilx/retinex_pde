@@ -67,14 +67,4 @@ int mw4_debug_flag;
 /** pre-defined message */
 #define MW4_MSG_PRECISION_LOSS "precision may be lost"
 
-/* algo_normalize.c */
-float *mw4_normalize(float *data, size_t size, float target_min, float target_max, float flatten_min, float flatten_max);
-/* algo_retinex_pde.c */
-float *mw4_retinex_pde(float *data_out, const float *data_in, size_t nx, size_t ny, float tmin, float tmax, float u);
-/* io_tiff.c */
-unsigned char *mw4_read_tiff(const char *fname, unsigned int *nx, unsigned int *ny);
-int mw4_write_tiff(const char *fname, unsigned char *data, unsigned int nx, unsigned int ny);
-float **mw4_deinterlace(float **data_out_rgb, unsigned char *data_in, size_t size);
-unsigned char *mw4_interlace(unsigned char *data_out, float **data_in_rgb, size_t size);
-
 #endif /* !_MW4_H_ */
