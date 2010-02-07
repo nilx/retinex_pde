@@ -243,15 +243,15 @@ int main(int argc, char *const *argv)
      */
 
     /* read the TIFF image */
-    if (NULL == (data_tiff = mw4_read_tiff(fname_in, &nx, &ny)))
+    if (NULL == (data_tiff = read_tiff_rgba_u8(fname_in, &nx, &ny)))
         MW4_FATAL(MW4_MSG_FILE_READ_ERR);
     MW4_DEBUG("input image file read");
 
     /* allocate data_norm, data_rtnx */
     if (NULL ==
-	(data_norm = (float *) malloc(3 * nx * ny * sizeof(float)))
+	(data_norm = (float *) malloc(4 * nx * ny * sizeof(float)))
 	|| NULL == (data_rtnx =
-		    (float *) malloc(3 * nx * ny * sizeof(float))))
+		    (float *) malloc(4 * nx * ny * sizeof(float))))
 	MW4_FATAL(MW4_MSG_ALLOC_ERR);
 
     data_norm_rgb[0] = data_norm;
@@ -261,10 +261,14 @@ int main(int argc, char *const *argv)
     data_rtnx_rgb[1] = data_rtnx + nx * ny;
     data_rtnx_rgb[2] = data_rtnx + 2 * nx * ny;
 
-    /* extract the channel */
-    if (NULL == (mw4_deinterlace(data_norm_rgb, data_tiff, nx * ny)))
-        MW4_FATAL("error while deinterlacing the image");
-    MW4_DEBUG("image deinterlaced");
+    /* copy to data_norm */
+    {
+	unsigned char * ptr_tiff = data_tiff;
+	unsigned char * ptr_end = ptr_tiff + 4 * nx * ny;
+	float * ptr_norm = data_norm;
+	while (ptr_tiff < ptr_end)
+	    *ptr_norm++ = (float) (*ptr_tiff++);
+    }
 
     /*
      * do normalization and save
@@ -275,11 +279,8 @@ int main(int argc, char *const *argv)
 		      0., 255., fmin, fmax);
     MW4_DEBUG("input renormalized");
 
-    /* convert data_norm to unsigned integer and write */
-    if (NULL == mw4_interlace(data_tiff, data_norm_rgb, nx * ny))
-        MW4_FATAL("error while interlacing the normalized data");
-    MW4_DEBUG("normalized image file interlaced");
-    mw4_write_tiff(fname_norm, data_tiff, nx, ny);
+    /* write */
+    write_tiff_rgba_f32(fname_norm, data_norm, nx, ny);
     MW4_DEBUG("normalized image file written");
 
     /*
@@ -297,11 +298,17 @@ int main(int argc, char *const *argv)
 		      0., 255., fmin, fmax);
     }
 
-    /* convert data_rtnx to unsigned integer and write */
-    if (NULL == mw4_interlace(data_tiff, data_rtnx_rgb, nx * ny))
-        MW4_FATAL("error while interlacing the retinex data");
-    MW4_DEBUG("retinex image file interlaced");
-    mw4_write_tiff(fname_rtnx, data_tiff, nx, ny);
+    /* write alpha channel */
+    {
+	float * ptr_rtnx = data_rtnx + 3 * nx * ny;
+	float * ptr_end = ptr_rtnx + nx * ny;
+
+	while (ptr_rtnx < ptr_end)
+	    *ptr_rtnx++ = 255.;
+    }
+
+    /* write */
+    write_tiff_rgba_f32(fname_rtnx, data_rtnx, nx, ny);
     MW4_DEBUG("retinex image file written");
 
     free(data_tiff);
