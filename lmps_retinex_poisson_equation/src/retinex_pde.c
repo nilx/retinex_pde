@@ -249,30 +249,30 @@ static float *mw4_retinex_update_dft(float *data,
  *                           - 2 - 2 / (n_x \times n_y - 1))} @f$;
  * @li this data is transformed by backward DFT.
  *
- * @param data_out output array, retinex-corrected, already allocated
- * @param data_in array to process
+ * @param data input/output array
  * @param nx dimension
  * @param ny dimension
  * @param tmin, tmax retinex min/max threshold
  * @param u multiplication parameter for @f$ \hat{u}() @f$
  *
- * @return data_out, or NULL if an error occured
+ * @return data, or NULL if an error occured
  *
  * @todo unroll loops
+ * @todo inplace fft
  * @todo split pre/run/post for multi-threading
  */
-float *mw4_retinex_pde(float *data_out, const float *data_in,
+float *mw4_retinex_pde(float *data,
                        size_t nx, size_t ny, float tmin, float tmax, float u)
 {
     fftwf_plan dct_fw, dct_bw;
-    float *data_fft;
+    float *data_fft, *data_tmp;
 
     /*
      * checks and initialisation
      */
 
     /* check allocaton */
-    if (NULL == data_in || NULL == data_out)
+    if (NULL == data)
         MW4_FATAL(MW4_MSG_NULL_PTR);
     /* start threaded fftw if FFTW_NTHREADS is defined */
 #ifdef FFTW_NTHREADS
@@ -283,13 +283,16 @@ float *mw4_retinex_pde(float *data_out, const float *data_in,
     /* allocate the float-complex FFT array */
     if (NULL == (data_fft = (float *) malloc(sizeof(float) * nx * ny)))
         MW4_FATAL(MW4_MSG_ALLOC_ERR);
+    /* allocate the float tmp array */
+    if (NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny)))
+	MW4_FATAL(MW4_MSG_ALLOC_ERR);
 
     /*
      * step one : fill the DFT input with symmetrised discrete laplacian
      */
 
-    /* compute the laplacian and store it in data_out */
-    (void) mw4_discrete_laplacian_threshold(data_out, data_in,
+    /* compute the laplacian and store it in data_tmp */
+    (void) mw4_discrete_laplacian_threshold(data_tmp, data,
                                             nx, ny, tmin, tmax);
 
     /*
@@ -298,10 +301,12 @@ float *mw4_retinex_pde(float *data_out, const float *data_in,
 
     /* create the DFT forward plan and run the DCT */
     dct_fw = fftwf_plan_r2r_2d((int) ny, (int) nx,
-                               data_out, data_fft,
+                               data_tmp, data_fft,
                                FFTW_REDFT10, FFTW_REDFT10,
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_fw);
+
+    free(data_tmp);
 
     /*
      * step three : update the DCT result
@@ -316,7 +321,7 @@ float *mw4_retinex_pde(float *data_out, const float *data_in,
 
     /* create the DFT backward plan and run the DCT */
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,
-                               data_fft, data_out,
+                               data_fft, data,
                                FFTW_REDFT01, FFTW_REDFT01,
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_bw);
@@ -333,7 +338,7 @@ float *mw4_retinex_pde(float *data_out, const float *data_in,
 #ifdef FFTW_NTHREADS
     fftwf_cleanup_threads();
 #endif                          /* FFTW_NTHREADS */
-    return data_out;
+    return data;
 }
 
 #ifdef CHECK

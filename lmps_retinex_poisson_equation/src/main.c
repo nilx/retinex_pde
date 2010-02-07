@@ -249,44 +249,34 @@ int main(int argc, char *const *argv)
 		 (float *) malloc(4 * nx * ny * sizeof(float))))
 	MW4_FATAL(MW4_MSG_ALLOC_ERR);
 
+    /* copy data_norm to data_rtnx */
+    memcpy(data_rtnx, data_norm, 4 * nx * ny * sizeof(float));
+
     /*
-     * do retinex and normalize 3%
+     * do normalization 3% on original data and save
+     */
+
+    for (channel = 0; channel < 3; channel++)
+	normalize_f32(data_norm + channel * nx * ny, nx * ny,
+		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
+    write_tiff_rgba_f32(fname_norm, data_norm, nx, ny);
+    free(data_norm);
+
+    /*
+     * do retinex and normalize 3% and save
      */
 
     for (channel = 0; channel < 3; channel++)
     {
 	if (NULL == mw4_retinex_pde(data_rtnx + channel * nx * ny,
-				    data_norm + channel * nx * ny,
 				    nx, ny, tmin, tmax, u))
 	    MW4_FATAL("error while processing the FFT PDE resolution");
 	MW4_DEBUG("retinex PDE solved");
 	normalize_f32(data_rtnx + channel * nx * ny, nx * ny, 
 		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
     }
-
-    /* alpha channel */
-    {
-	float * ptr_rtnx = data_rtnx + 3 * nx * ny;
-	float * ptr_end = ptr_rtnx + nx * ny;
-	while (ptr_rtnx < ptr_end)
-	    *ptr_rtnx++ = 255.;
-    }
-
-    /*
-     * do normalization 3% on original data
-     */
-
-    for (channel = 0; channel < 3; channel++)
-	normalize_f32(data_norm + channel * nx * ny, nx * ny,
-		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
-
-    /* write */
-    write_tiff_rgba_f32(fname_norm, data_norm, nx, ny);
     write_tiff_rgba_f32(fname_rtnx, data_rtnx, nx, ny);
-    MW4_DEBUG("image files written");
-
-    free(data_norm);
     free(data_rtnx);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
