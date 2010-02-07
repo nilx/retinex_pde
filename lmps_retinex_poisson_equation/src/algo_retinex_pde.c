@@ -160,7 +160,6 @@ static float *mw4_retinex_update_dft(float *data,
      * fabs(u - s_u) is a trick to avoid float comparison,
      * with negligible cost
      */
-#pragma omp critical
     if (nx != s_nx || ny != s_ny || 0. < fabs(u - s_u) || 0. < fabs(m - s_m))
     {
         /* (re) allocate the factors table */
@@ -298,7 +297,6 @@ float *mw4_retinex_pde(float *data_out, const float *data_in,
      */
 
     /* create the DFT forward plan and run the DCT */
-#pragma omp critical
     dct_fw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_out, data_fft,
                                FFTW_REDFT10, FFTW_REDFT10,
@@ -317,7 +315,6 @@ float *mw4_retinex_pde(float *data_out, const float *data_in,
      */
 
     /* create the DFT backward plan and run the DCT */
-#pragma omp critical
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_fft, data_out,
                                FFTW_REDFT01, FFTW_REDFT01,

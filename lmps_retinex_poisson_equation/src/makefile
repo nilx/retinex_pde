@@ -5,7 +5,7 @@ OBJ	= $(CSRC:.c=.o)
 BIN	= retinex_pde
 
 COPT	= -O3 -funroll-loops -fomit-frame-pointer
-CFLAGS	+= -std=c99 -Wall -Wextra -Wno-unknown-pragmas -Werror $(CXXOPT)
+CFLAGS	+= -std=c99 -Wall -Wextra -Werror $(CXXOPT)
 
 default: $(BIN)
 

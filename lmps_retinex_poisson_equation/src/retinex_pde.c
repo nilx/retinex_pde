@@ -268,7 +268,6 @@ int main(int argc, char *const *argv)
      * do normalization and save
      */
 
-#pragma omp parallel for
     for (channel = 0; channel < 3; channel++)
 	mw4_normalize(data_norm_rgb[channel], nx * ny,
 		      0., 255., fmin, fmax);
@@ -285,7 +284,6 @@ int main(int argc, char *const *argv)
      * do retinex and save
      */
 
-#pragma omp parallel for
     for (channel = 0; channel < 3; channel++)
     {
 	if (NULL == mw4_retinex_pde(data_rtnx_rgb[channel],
