@@ -138,11 +138,8 @@ int main(int argc, char *const *argv)
     float u;
     int channel;
     char *fname_in, *fname_norm, *fname_rtnx;   /* input/output file names */
-    unsigned char *data_tiff;
     unsigned int nx, ny;        /* data size */
     float *data_norm, *data_rtnx;       /* output data */
-    float *data_norm_rgb[3];
-    float *data_rtnx_rgb[3];
 
     /* default values initialisation */
     tmin = 0.;
@@ -243,75 +240,51 @@ int main(int argc, char *const *argv)
      */
 
     /* read the TIFF image */
-    if (NULL == (data_tiff = read_tiff_rgba_u8(fname_in, &nx, &ny)))
+    if (NULL == (data_norm = read_tiff_rgba_f32(fname_in, &nx, &ny)))
         MW4_FATAL(MW4_MSG_FILE_READ_ERR);
     MW4_DEBUG("input image file read");
 
-    /* allocate data_norm, data_rtnx */
-    if (NULL ==
-	(data_norm = (float *) malloc(4 * nx * ny * sizeof(float)))
-	|| NULL == (data_rtnx =
-		    (float *) malloc(4 * nx * ny * sizeof(float))))
+    /* allocate data_rtnx */
+    if (NULL == (data_rtnx =
+		 (float *) malloc(4 * nx * ny * sizeof(float))))
 	MW4_FATAL(MW4_MSG_ALLOC_ERR);
 
-    data_norm_rgb[0] = data_norm;
-    data_norm_rgb[1] = data_norm + nx * ny;
-    data_norm_rgb[2] = data_norm + 2 * nx * ny;
-    data_rtnx_rgb[0] = data_rtnx;
-    data_rtnx_rgb[1] = data_rtnx + nx * ny;
-    data_rtnx_rgb[2] = data_rtnx + 2 * nx * ny;
-
-    /* copy to data_norm */
-    {
-	unsigned char * ptr_tiff = data_tiff;
-	unsigned char * ptr_end = ptr_tiff + 4 * nx * ny;
-	float * ptr_norm = data_norm;
-	while (ptr_tiff < ptr_end)
-	    *ptr_norm++ = (float) (*ptr_tiff++);
-    }
-
     /*
-     * do normalization and save
-     */
-
-    for (channel = 0; channel < 3; channel++)
-	mw4_normalize(data_norm_rgb[channel], nx * ny,
-		      0., 255., fmin, fmax);
-    MW4_DEBUG("input renormalized");
-
-    /* write */
-    write_tiff_rgba_f32(fname_norm, data_norm, nx, ny);
-    MW4_DEBUG("normalized image file written");
-
-    /*
-     * do retinex and save
+     * do retinex and normalize 3%
      */
 
     for (channel = 0; channel < 3; channel++)
     {
-	if (NULL == mw4_retinex_pde(data_rtnx_rgb[channel],
-				    data_norm_rgb[channel],
+	if (NULL == mw4_retinex_pde(data_rtnx + channel * nx * ny,
+				    data_norm + channel * nx * ny,
 				    nx, ny, tmin, tmax, u))
 	    MW4_FATAL("error while processing the FFT PDE resolution");
 	MW4_DEBUG("retinex PDE solved");
-	mw4_normalize(data_rtnx_rgb[channel], nx * ny, 
-		      0., 255., fmin, fmax);
+	normalize_f32(data_rtnx + channel * nx * ny, nx * ny, 
+		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
     }
 
-    /* write alpha channel */
+    /* alpha channel */
     {
 	float * ptr_rtnx = data_rtnx + 3 * nx * ny;
 	float * ptr_end = ptr_rtnx + nx * ny;
-
 	while (ptr_rtnx < ptr_end)
 	    *ptr_rtnx++ = 255.;
     }
 
-    /* write */
-    write_tiff_rgba_f32(fname_rtnx, data_rtnx, nx, ny);
-    MW4_DEBUG("retinex image file written");
+    /*
+     * do normalization 3% on original data
+     */
 
-    free(data_tiff);
+    for (channel = 0; channel < 3; channel++)
+	normalize_f32(data_norm + channel * nx * ny, nx * ny,
+		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
+
+    /* write */
+    write_tiff_rgba_f32(fname_norm, data_norm, nx, ny);
+    write_tiff_rgba_f32(fname_rtnx, data_rtnx, nx, ny);
+    MW4_DEBUG("image files written");
+
     free(data_norm);
     free(data_rtnx);
 
