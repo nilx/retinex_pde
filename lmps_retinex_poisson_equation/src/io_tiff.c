@@ -77,7 +77,7 @@ static uint32 *read_tiff_rgba_raw(const char *fname, size_t * nx, size_t * ny)
         return NULL;
     }
 
-    size = (size_t) width * (size_t) height;
+    size = (size_t) width *(size_t) height;
     if (NULL != nx)
         *nx = (size_t) width;
     if (NULL != ny)
@@ -111,7 +111,7 @@ static uint32 *read_tiff_rgba_raw(const char *fname, size_t * nx, size_t * ny)
  * @return the data array pointer, NULL if an error occured
  */
 static void *read_tiff_rgba(const char *fname, size_t * nx, size_t * ny,
-			    int dtype)
+                            int dtype)
 {
     uint32 *data_tiff = NULL;
     uint32 *ptr_in, *ptr_end;
@@ -125,79 +125,81 @@ static void *read_tiff_rgba(const char *fname, size_t * nx, size_t * ny,
     switch (dtype)
     {
     case DT_U8:
-    {
-	unsigned char *data = NULL;
-	unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+        {
+            unsigned char *data = NULL;
+            unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
 
-	/* allocate the RGBAarray */
-	if (NULL == (data = (unsigned char *) malloc(4 * *nx * *ny 
-						     * sizeof(unsigned char))))
-	{
-	    free(data_tiff);
-	    return NULL;
-	}
-	
-	/* setup the pointers */
-	ptr_r = data;
-	ptr_g = ptr_r + *nx * *ny;
-	ptr_b = ptr_g + *nx * *ny;
-	ptr_a = ptr_b + *nx * *ny;
+            /* allocate the RGBAarray */
+            if (NULL == (data = (unsigned char *) malloc(4 * *nx * *ny
+                                                         *
+                                                         sizeof(unsigned
+                                                                char))))
+            {
+                free(data_tiff);
+                return NULL;
+            }
 
-	/*
-	 * deinterlace the TIFF raw array (ptr_in)
-	 * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-	 */
-	while (ptr_in < ptr_end)
-	{
-	    *ptr_r++ = (unsigned char) TIFFGetR(*ptr_in);
-	    *ptr_g++ = (unsigned char) TIFFGetG(*ptr_in);
-	    *ptr_b++ = (unsigned char) TIFFGetB(*ptr_in);
-	    *ptr_a++ = (unsigned char) TIFFGetA(*ptr_in);
-	    ptr_in++;
-	}
+            /* setup the pointers */
+            ptr_r = data;
+            ptr_g = ptr_r + *nx * *ny;
+            ptr_b = ptr_g + *nx * *ny;
+            ptr_a = ptr_b + *nx * *ny;
 
-	free(data_tiff);
-	
-	return (void *) data;
-    }
+            /*
+             * deinterlace the TIFF raw array (ptr_in)
+             * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+             */
+            while (ptr_in < ptr_end)
+            {
+                *ptr_r++ = (unsigned char) TIFFGetR(*ptr_in);
+                *ptr_g++ = (unsigned char) TIFFGetG(*ptr_in);
+                *ptr_b++ = (unsigned char) TIFFGetB(*ptr_in);
+                *ptr_a++ = (unsigned char) TIFFGetA(*ptr_in);
+                ptr_in++;
+            }
+
+            free(data_tiff);
+
+            return (void *) data;
+        }
     case DT_F32:
-    {
-	float *data = NULL;
-	float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+        {
+            float *data = NULL;
+            float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
 
-	/* allocate the RGBAarray */
-	if (NULL == (data = (float *) malloc(4 * *nx * *ny 
-					     * sizeof(float))))
-	{
-	    free(data_tiff);
-	    return NULL;
-	}
-	
-	/* setup the pointers */
-	ptr_r = data;
-	ptr_g = ptr_r + *nx * *ny;
-	ptr_b = ptr_g + *nx * *ny;
-	ptr_a = ptr_b + *nx * *ny;
+            /* allocate the RGBAarray */
+            if (NULL == (data = (float *) malloc(4 * *nx * *ny
+                                                 * sizeof(float))))
+            {
+                free(data_tiff);
+                return NULL;
+            }
 
-	/*
-	 * deinterlace the TIFF raw array (ptr_in)
-	 * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-	 */
-	while (ptr_in < ptr_end)
-	{
-	    *ptr_r++ = (float) TIFFGetR(*ptr_in);
-	    *ptr_g++ = (float) TIFFGetG(*ptr_in);
-	    *ptr_b++ = (float) TIFFGetB(*ptr_in);
-	    *ptr_a++ = (float) TIFFGetA(*ptr_in);
-	    ptr_in++;
-	}
+            /* setup the pointers */
+            ptr_r = data;
+            ptr_g = ptr_r + *nx * *ny;
+            ptr_b = ptr_g + *nx * *ny;
+            ptr_a = ptr_b + *nx * *ny;
 
-	free(data_tiff);
-	
-	return (void *) data;
-    }
+            /*
+             * deinterlace the TIFF raw array (ptr_in)
+             * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+             */
+            while (ptr_in < ptr_end)
+            {
+                *ptr_r++ = (float) TIFFGetR(*ptr_in);
+                *ptr_g++ = (float) TIFFGetG(*ptr_in);
+                *ptr_b++ = (float) TIFFGetB(*ptr_in);
+                *ptr_a++ = (float) TIFFGetA(*ptr_in);
+                ptr_in++;
+            }
+
+            free(data_tiff);
+
+            return (void *) data;
+        }
     default:
-	return NULL;
+        return NULL;
     }
 }
 
@@ -238,12 +240,16 @@ unsigned char *read_tiff_rgba_u8(const char *fname, size_t * nx, size_t * ny)
  */
 
 /**
- * @brief save an array into a TIFF file
+ * @brief save an array into a LZW-compressed TIFF file
+ *
+ * @param fname the file name to write
+ * @param data_tiff image data array
+ * @param nx, ny image size
  *
  * @return 0 if OK, != 0 if an error occured
  */
-static int write_tiff_rgba_raw(const char *fname, const uint32 *data_tiff,
-			       size_t nx, size_t ny)
+static int write_tiff_rgba_raw(const char *fname, const uint32 * data_tiff,
+                               size_t nx, size_t ny)
 {
     TIFF *tiffp = NULL;
     uint16 alpha_type[] = { EXTRASAMPLE_ASSOCALPHA };
@@ -276,6 +282,7 @@ static int write_tiff_rgba_raw(const char *fname, const uint32 *data_tiff,
         || 1 != TIFFSetField(tiffp, TIFFTAG_ROWSPERSTRIP, ny)
         || 1 != TIFFSetField(tiffp, TIFFTAG_SAMPLESPERPIXEL, 4)
         || 1 != TIFFSetField(tiffp, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB)
+        || 1 != TIFFSetField(tiffp, TIFFTAG_COMPRESSION, COMPRESSION_LZW)
         || 1 != TIFFSetField(tiffp, TIFFTAG_EXTRASAMPLES, 1, alpha_type))
     {
         TIFFClose(tiffp);
@@ -314,13 +321,13 @@ static int write_tiff_rgba_raw(const char *fname, const uint32 *data_tiff,
  * 
  * @param fname TIFF file name
  * @param data input array of float values supposed in [0,255]
- * @param nx ny array size
+ * @param nx, ny array size
  * @param dtype the input data type : DT_U8 or DT_F32
  *
  * @return 0 if OK, != 0 if an error occured
  */
 static int write_tiff_rgba(const char *fname, const void *data,
-			   size_t nx, size_t ny, int dtype)
+                           size_t nx, size_t ny, int dtype)
 {
     uint32 *data_tiff = NULL;
     uint32 *ptr_out, *ptr_end;
@@ -331,7 +338,7 @@ static int write_tiff_rgba(const char *fname, const void *data,
         return -1;
 
     /* create the tiff array */
-    if (NULL == (data_tiff = (uint32*) malloc(nx * ny * sizeof(uint32))))
+    if (NULL == (data_tiff = (uint32 *) malloc(nx * ny * sizeof(uint32))))
         return -1;
     ptr_out = data_tiff;
     ptr_end = ptr_out + nx * ny;
@@ -339,49 +346,49 @@ static int write_tiff_rgba(const char *fname, const void *data,
     switch (dtype)
     {
     case DT_U8:
-    {
-	const unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+        {
+            const unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
 
-	/* setup the pointers */
-	ptr_r = (unsigned char *) data;
-	ptr_g = ptr_r + nx * ny;
-	ptr_b = ptr_g + nx * ny;
-	ptr_a = ptr_b + nx * ny;
+            /* setup the pointers */
+            ptr_r = (unsigned char *) data;
+            ptr_g = ptr_r + nx * ny;
+            ptr_b = ptr_g + nx * ny;
+            ptr_a = ptr_b + nx * ny;
 
-	/*
-	 * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-	 * into the TIFF raw array (ptr_out)
-	 */
-	while (ptr_out < ptr_end)
-	    *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++),
-				      (uint8) (*ptr_g++),
-				      (uint8) (*ptr_b++),
-				      (uint8) (*ptr_a++));
-	break;
-    }
+            /*
+             * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+             * into the TIFF raw array (ptr_out)
+             */
+            while (ptr_out < ptr_end)
+                *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++),
+                                          (uint8) (*ptr_g++),
+                                          (uint8) (*ptr_b++),
+                                          (uint8) (*ptr_a++));
+            break;
+        }
     case DT_F32:
-    {
-	const float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+        {
+            const float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
 
-	/* setup the pointers */
-	ptr_r = (float *) data;
-	ptr_g = ptr_r + nx * ny;
-	ptr_b = ptr_g + nx * ny;
-	ptr_a = ptr_b + nx * ny;
+            /* setup the pointers */
+            ptr_r = (float *) data;
+            ptr_g = ptr_r + nx * ny;
+            ptr_b = ptr_g + nx * ny;
+            ptr_a = ptr_b + nx * ny;
 
-	/*
-	 * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-	 * into the TIFF raw array (ptr_out)
-	 */
-	while (ptr_out < ptr_end)
-	    *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++ + .5),
-				      (uint8) (*ptr_g++ + .5),
-				      (uint8) (*ptr_b++ + .5),
-				      (uint8) (*ptr_a++ + .5));
-	break;
-    }
+            /*
+             * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+             * into the TIFF raw array (ptr_out)
+             */
+            while (ptr_out < ptr_end)
+                *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++ + .5),
+                                          (uint8) (*ptr_g++ + .5),
+                                          (uint8) (*ptr_b++ + .5),
+                                          (uint8) (*ptr_a++ + .5));
+            break;
+        }
     default:
-	return -1;
+        return -1;
     }
 
     /* write the file */
@@ -397,12 +404,12 @@ static int write_tiff_rgba(const char *fname, const void *data,
  *
  * @param fname TIFF file name
  * @param data input array of float values supposed in [0,255]
- * @param nx ny array size
+ * @param nx, ny array size
  *
  * @return 0 if OK, != 0 if an error occured
  */
 int write_tiff_rgba_f32(const char *fname, const float *data,
-			size_t nx, size_t ny)
+                        size_t nx, size_t ny)
 {
     return write_tiff_rgba(fname, (void *) data, nx, ny, DT_F32);
 }
@@ -412,12 +419,12 @@ int write_tiff_rgba_f32(const char *fname, const float *data,
  *
  * @param fname TIFF file name
  * @param data input array of 8bit values
- * @param nx ny array size
+ * @param nx, ny array size
  *
  * @return 0 if OK, != 0 if an error occured
  */
 int write_tiff_rgba_u8(const char *fname, const unsigned char *data,
-		       size_t nx, size_t ny)
+                       size_t nx, size_t ny)
 {
     return write_tiff_rgba(fname, (void *) data, nx, ny, DT_U8);
 }
