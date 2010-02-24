@@ -1,4 +1,4 @@
-CSRC	= io_tiff.c normalization.c retinex_pde.c main.c
+CSRC	= io_tiff.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c
 
 SRC	= $(CSRC)
 OBJ	= $(CSRC:.c=.o)

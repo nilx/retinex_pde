@@ -16,7 +16,7 @@
  */
 
 /**
- * @file normalization.c
+ * @file normalize_histo_lib.c
  * @brief normalization routines for float arrays
  *
  * The core routine, flatten_minmax_nb_f32(), implicitly assumes that
