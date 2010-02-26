@@ -17,6 +17,7 @@
 
 /**
  * @file retinex_pde_lib.c
+ * @brief laplacian, DFT and Poisson routines
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  */
