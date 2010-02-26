@@ -1,3 +1,11 @@
+# Copyright 2009, 2010 IPOL Image Processing On Line http://www.ipol.im/
+# Author: Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
+#
+# Copying and distribution of this file, with or without
+# modification, are permitted in any medium without royalty provided
+# the copyright notice and this notice are preserved.  This file is
+# offered as-is, without any warranty.
+
 CSRC	= io_tiff.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c
 
 SRC	= $(CSRC)

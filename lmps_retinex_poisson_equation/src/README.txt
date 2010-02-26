@@ -1,49 +1,66 @@
+% Retinex PDE
+
+# ABOUT
+
+* Author    : Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
+* Copyright : (C) 2009, 2010 IPOL Image Processing On Line http://www.ipol.im/
+* Licence   : GPL v3+, see GPLv3.txt
+
+# OVERVIEW
+
+This source code provides an implementation of the Retinex theory by a
+Poisson equation, as described on
+    http://www.ipol.im/pub/algo/lmps_retinex_poisson_equation/.
+
+This program reads a TIFF image, performs a DFT, then solved the
+Poisson equation in the Fourier space and performs an inverse DFT.
+The result is normalized and written as a TIFF image.
+
+The same normalization is also performed on a unmodified image, for
+comparison. The normalization method is the "simplest color balance",
+as described on
+    http://www.ipol.im/pub/algo/lmps_simplest_color_balance/.
+
+Only 8bit RGB TIFF images are handled. Other TIFF files are implicitly
+converted to 8bit color RGB.
+
 # REQUIREMENTS
 
-retinex_pde uses libtiff to read and write TIFF image files, and
-libfftw3 to perform a Fourier transform.
+The code is written in ANSI C, and should compile on any system with
+an ANSI C compiler.
 
-On debian-based systems, this is enought to install these libraries
-    sudo aptitude install libtiff4-dev libfftw3-dev
+The libtiff header and libraries are required on the system for
+compilation and execution. See http://www.remotesensing.org/libtiff/ 
 
-retinex_pde can also use OpenMP for parallel computation of the
-retinex transform on the RGB channels. OpenMP support is included in
-the gcc compiler, no other installation is required.
-
+The fftw3 header and libraries are required on the system for
+compilation and execution. See http://www.fftw.org/
 
 # COMPILATION
 
-simple way:
- 
-    cc -O3 -ltiff -lfftw3f \
-    io_tiff.c algo_normalize.c algo_retinex_pde.c retinex_pde.c \
-    -o retinex_pde
+Simply use the provided makefile, with the command `make`.
+Alternatively, you can manually compile
+    cc io_tiff.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c \
+        -ltiff -lfftw3f -o retinex_pde
 
-with OpenMP support:
+Multi-threading is possible, with the FFTW_NTHREADS parameter:
+    cc io_tiff.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c \
+        -DFFTW_NTHREADS -ltiff -lfftw3f -o retinex_pde
 
-    cc -fopenmp -O3 -ltiff -lfftw3f \
-    io_tiff.c algo_normalize.c algo_retinex_pde.c retinex_pde.c \
-    -o retinex_pde
+# USAGE
 
-with N FFT multi-threads:
+This program takes 4 parameters: `retinex_pde T in norm rtnx`
 
-    cc -fopenmp -DFFTW_NTHREADS=4 -O3 -ltiff -lfftw3f \
-    io_tiff.c algo_normalize.c algo_retinex_pde.c retinex_pde.c \
-    -o retinex_pde
+* `T`       : retinex threshold [0...255[
+* `in`      : input image
+* `norm`    : normalized output image
+* `rtnx`    : retinex output image
 
-FFT multi-threading can be combined with OpenMP, but it will only be
-faster with large images, and enough processing units (processors or cores):
-* 3 processors for OpenMP
-* N processors with N FFT multi-threads
-* 3N processors for both
+# ABOUT THIS FILE
 
-# USE
+Copyright 2009, 2010 IPOL Image Processing On Line http://www.ipol.im/
+Author: Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
 
-Options and details are available with the --help option:
-
-    ./retinex_pde -h
-
-For OpenMP multi-processing, you need to set the number of threads to
-use before starting retinex_pde:
-
-    export OMP_MAX_THREADS=3
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without any warranty.
