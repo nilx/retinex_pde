@@ -51,9 +51,9 @@
  * If the absolute value of difference is < t, 0 is used instead.
  *
  * This step takes a significant part of the computation time, and
- * needs to be fast. in that case, we observed that (with our compiler
+ * needs to be fast. In that case, we observed that (with our compiler
  * and architecture):
- * - pointer arithmetics are faster than data[i]
+ * - pointer arithmetic is faster than data[i]
  * - if() is faster than ( ? : )
  *
  * @param data_out output array
@@ -64,6 +64,7 @@
  * @return data_out
  *
  * @todo full iteration and switch()?
+ * @todo MMX/SSE/intrinsics?
  * @todo try using blas?
  */
 static float *discrete_laplacian_threshold(float *data_out,
@@ -140,9 +141,9 @@ static float *discrete_laplacian_threshold(float *data_out,
 /**
  * @brief perform a Poisson PDE in the Fourier DCT space
  *
- * @f$ u(i, j) = F(i, j) / (2 * (cos(PI * i / nx)
- *                               + cos(PI * j / ny)
- *                               - 2. - 2. / (nx * ny - 1))) @f$
+ * @f$ u(i, j) = F(i, j) * m / (2 cos(i PI / nx)
+ *                              + 2 cos(j PI / ny)
+ *                              - 4 - 4 / (nx ny - 1))) @f$
  *
  * The trigonometric data is only computed once if the function is
  * called many times with the same nx, ny and m parameters (common for
@@ -156,26 +157,27 @@ static float *discrete_laplacian_threshold(float *data_out,
  *
  * @todo handle nx=ny
  */
-static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
+static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 {
     float *ptr_data, *ptr_end;
-    float *ptr_coef;
-    float *ptr_cosi, *ptr_cosi_end, *ptr_cosj, *ptr_cosj_end;
-    int i, j;
-    float cst;
+    double *ptr_coef;
     /* static data, kept for a potential re-use */
     /*
-     * we typically perform this on 3 RGB planes, and wand to keep the
-     * trigonometric data because its computation is expensive
+     * we typically perform this fonction on 3 RGB planes, and want to
+     * keep the trigonometric data because its computation is expensive
      */
+    static double *s_coef = NULL;
+    static double *s_cosi = NULL, *s_cosj = NULL;
     static float s_m = 0.;
     static size_t s_nx = 0, s_ny = 0;
-    static float *s_coef = NULL, *s_cosi = NULL, *s_cosj = NULL;
 
     /*
-     * if needed, recompute the coefs
-     * this computation is only needed if nx, ny and m are not the
-     * same as the previous call
+     * the trigonometric computation is expensive
+     * this code block only recompute the coefs if needed, ie if nx,
+     * ny and m are not the same as the previous call
+     * once computed, the data is kept in static variables until the
+     * next call, because multiple calls with the same parameters are
+     * common with RGB images
      */
     /*
      * fabs(m - s_m) is a trick to avoid float comparison,
@@ -183,14 +185,16 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
      */
     if (nx != s_nx || ny != s_ny || 0. < fabs(m - s_m))
     {
-        s_m = m;
+        int i, j;
+        double cst, m2;
+        double *ptr_cosi, *ptr_cosi_end, *ptr_cosj, *ptr_cosj_end;
 
         if (s_nx != nx)
         {
             /* (re) allocate the cosinus table */
             if (NULL != s_cosi)
                 free(s_cosi);
-            if (NULL == (s_cosi = (float *) malloc(sizeof(float) * nx)))
+            if (NULL == (s_cosi = (double *) malloc(sizeof(double) * nx)))
             {
                 fprintf(stderr, "allocation error\n");
                 abort();
@@ -200,7 +204,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
             ptr_cosi_end = ptr_cosi + nx;
             i = 0;
             while (ptr_cosi < ptr_cosi_end)
-                *ptr_cosi++ = 2. * cos((M_PI * i++) / nx);
+                *ptr_cosi++ = cos((M_PI * i++) / nx);
         }
         s_nx = nx;
 
@@ -209,7 +213,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
             /* (re) allocate the sinus table */
             if (NULL != s_cosj)
                 free(s_cosj);
-            if (NULL == (s_cosj = (float *) malloc(sizeof(float) * ny)))
+            if (NULL == (s_cosj = (double *) malloc(sizeof(double) * ny)))
             {
                 fprintf(stderr, "allocation error\n");
                 abort();
@@ -219,24 +223,24 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
             ptr_cosj_end = ptr_cosj + ny;
             j = 0;
             while (ptr_cosj < ptr_cosj_end)
-                *ptr_cosj++ = 2. * cos((M_PI * j++) / ny);
+                *ptr_cosj++ = cos((M_PI * j++) / ny);
         }
         s_ny = ny;
 
         /* (re) allocate the coefs table */
         if (NULL != s_coef)
             free(s_coef);
-        if (NULL == (s_coef = (float *) malloc(sizeof(float) * nx * ny)))
+        if (NULL == (s_coef = (double *) malloc(sizeof(double) * nx * ny)))
         {
             fprintf(stderr, "allocation error\n");
             abort();
         }
 
+        s_m = m;
+
         /* (re) compute the coefs */
-        /*
-         * coef(i, j) = 1 / (cos(i) + cos(j) - 4 - 4 / (nx * ny - 1))
-         */
-        cst = 4. / (s_nx * s_ny - 1);
+        cst = 2. / (s_nx * s_ny - 1);
+        m2 = s_m / 2.;
         ptr_coef = s_coef;
         ptr_cosj = s_cosj;
         ptr_cosj_end = s_cosj + s_ny;
@@ -245,10 +249,16 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
         {
             ptr_cosi = s_cosi;
             while (ptr_cosi < ptr_cosi_end)
-                *ptr_coef++ = s_m / (*ptr_cosi++ + *ptr_cosj - 4. - cst);
+                *ptr_coef++ = m2 / (*ptr_cosi++ + *ptr_cosj - 2. - cst);
             ptr_cosj++;
         }
     }
+    /*
+     * end of the conditional trigonometric recomputation
+     * we now have an array s_coef of nx x ny coefficients,
+     * with s_coef[i, j] = 
+     * m / ( 2. cos(i PI / nx) + cos(j PI / ny) - 4. - 4. / (nx ny - 1))
+     */
 
     /* multiply the dct coefficients */
     ptr_data = data;
@@ -278,9 +288,9 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
  *     handled by a simple DCT);
  * @li the DFT data is modified by
  * @f$ \hat{u}(i, j) = \frac{\hat{F}(i, j)}
-                            {2 \times (\cos(\frac{i \pi}{n_x})
- *                           + \cos(\frac{j \pi}{n_y})
- *                           - 2 - 2 / (n_x \times n_y - 1))} @f$;
+                            {2 \cos(\frac{i \pi}{n_x})
+ *                           + 2 \cos(\frac{j \pi}{n_y})
+ *                           - 4 - 4 / (n_x n_y - 1))} @f$;
  * @li this data is transformed by backward DFT.
  *
  * @param data input/output array
@@ -288,9 +298,6 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
  * @param t retinex threshold
  *
  * @return data, or NULL if an error occured
- *
- * @todo inplace fft
- * @todo split pre/run/post for multi-threading
  */
 float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 {
@@ -341,7 +348,8 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     free(data_tmp);
 
     /* solve the Poisson PDE in Fourier space */
-    (void) retinex_poisson_dct(data_fft, nx, ny, 1. / (float) (nx * ny));
+    /* 1. / (float) (nx * ny)) is the DCT normalisation term, see libfftw */
+    (void) retinex_poisson_dct(data_fft, nx, ny, 1. / (double) (nx * ny));
 
     /* create the DFT forward plan and run the iDCT : data_fft -> data */
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,

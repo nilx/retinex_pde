@@ -22,7 +22,7 @@ check	: $(CSRC)
 		mv $$F.tmp $$F; \
 		indent -kr -bl -bli0 -i4 -l78 -nut -nce -sob -sc $$F; \
 		rm $$F~; \
-		splint -weak $$F; \
+		splint -weak -strict-lib $$F; \
 	done
 
 .PHONY	: clean distclean
