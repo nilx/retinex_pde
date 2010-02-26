@@ -85,8 +85,8 @@ int main(int argc, char *const *argv)
 
     /* normalize data_norm with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
-	normalize_f32(data_norm + channel * nx * ny, nx * ny,
-		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
+	normalize_histo_f32(data_norm + channel * nx * ny, nx * ny,
+			    0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
     write_tiff_rgba_f32(argv[3], data_norm, nx, ny);
     free(data_norm);
 
@@ -99,8 +99,8 @@ int main(int argc, char *const *argv)
 	    free(data_rtnx);
 	    return EXIT_FAILURE;
 	}
-	normalize_f32(data_rtnx + channel * nx * ny, nx * ny, 
-		      0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
+	normalize_histo_f32(data_rtnx + channel * nx * ny, nx * ny, 
+			    0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
     }
     write_tiff_rgba_f32(argv[4], data_rtnx, nx, ny);
     free(data_rtnx);
