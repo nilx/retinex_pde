@@ -99,111 +99,6 @@ static uint32 *read_tiff_rgba_raw(const char *fname, size_t * nx, size_t * ny)
 }
 
 /**
- * @brief load the data from a TIFF image file as an RGBA array
- *
- * The array is allocated by this function. It hold the RGBA pixels as
- * 4 contiguous arrays.
- *
- * @param fname the file name to read
- * @param nx, ny storage space for the image size
- * @param dtype the desired output type : DT_U8 or DT_F32
- *
- * @return the data array pointer, NULL if an error occured
- */
-static void *read_tiff_rgba(const char *fname, size_t * nx, size_t * ny,
-                            int dtype)
-{
-    uint32 *data_tiff = NULL;
-    uint32 *ptr_in, *ptr_end;
-
-    /* get the raw TIFF data */
-    if (NULL == (data_tiff = read_tiff_rgba_raw(fname, nx, ny)))
-        return NULL;
-    ptr_in = data_tiff;
-    ptr_end = ptr_in + *nx * *ny;
-
-    switch (dtype)
-    {
-    case DT_U8:
-        {
-            unsigned char *data = NULL;
-            unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
-
-            /* allocate the RGBAarray */
-            if (NULL == (data = (unsigned char *) malloc(4 * *nx * *ny
-                                                         *
-                                                         sizeof(unsigned
-                                                                char))))
-            {
-                free(data_tiff);
-                return NULL;
-            }
-
-            /* setup the pointers */
-            ptr_r = data;
-            ptr_g = ptr_r + *nx * *ny;
-            ptr_b = ptr_g + *nx * *ny;
-            ptr_a = ptr_b + *nx * *ny;
-
-            /*
-             * deinterlace the TIFF raw array (ptr_in)
-             * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-             */
-            while (ptr_in < ptr_end)
-            {
-                *ptr_r++ = (unsigned char) TIFFGetR(*ptr_in);
-                *ptr_g++ = (unsigned char) TIFFGetG(*ptr_in);
-                *ptr_b++ = (unsigned char) TIFFGetB(*ptr_in);
-                *ptr_a++ = (unsigned char) TIFFGetA(*ptr_in);
-                ptr_in++;
-            }
-
-            free(data_tiff);
-
-            return (void *) data;
-        }
-    case DT_F32:
-        {
-            float *data = NULL;
-            float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
-
-            /* allocate the RGBAarray */
-            if (NULL == (data = (float *) malloc(4 * *nx * *ny
-                                                 * sizeof(float))))
-            {
-                free(data_tiff);
-                return NULL;
-            }
-
-            /* setup the pointers */
-            ptr_r = data;
-            ptr_g = ptr_r + *nx * *ny;
-            ptr_b = ptr_g + *nx * *ny;
-            ptr_a = ptr_b + *nx * *ny;
-
-            /*
-             * deinterlace the TIFF raw array (ptr_in)
-             * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-             */
-            while (ptr_in < ptr_end)
-            {
-                *ptr_r++ = (float) TIFFGetR(*ptr_in);
-                *ptr_g++ = (float) TIFFGetG(*ptr_in);
-                *ptr_b++ = (float) TIFFGetB(*ptr_in);
-                *ptr_a++ = (float) TIFFGetA(*ptr_in);
-                ptr_in++;
-            }
-
-            free(data_tiff);
-
-            return (void *) data;
-        }
-    default:
-        return NULL;
-    }
-}
-
-/**
  * @brief load the data from a TIFF image file as a float RGBA array
  *
  * The array is allocated in this function call. It hold the RGBA
@@ -216,7 +111,46 @@ static void *read_tiff_rgba(const char *fname, size_t * nx, size_t * ny,
  */
 float *read_tiff_rgba_f32(const char *fname, size_t * nx, size_t * ny)
 {
-    return (float *) read_tiff_rgba(fname, nx, ny, DT_F32);
+    uint32 *data_tiff = NULL;
+    uint32 *ptr_in, *ptr_end;
+    float *data = NULL;
+    float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+
+    /* get the raw TIFF data */
+    if (NULL == (data_tiff = read_tiff_rgba_raw(fname, nx, ny)))
+        return NULL;
+    ptr_in = data_tiff;
+    ptr_end = ptr_in + *nx * *ny;
+
+    /* allocate the RGBAarray */
+    if (NULL == (data = (float *) malloc(4 * *nx * *ny * sizeof(float))))
+    {
+        free(data_tiff);
+        return NULL;
+    }
+
+    /* setup the pointers */
+    ptr_r = data;
+    ptr_g = ptr_r + *nx * *ny;
+    ptr_b = ptr_g + *nx * *ny;
+    ptr_a = ptr_b + *nx * *ny;
+
+    /*
+     * deinterlace the TIFF raw array (ptr_in)
+     * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+     */
+    while (ptr_in < ptr_end)
+    {
+        *ptr_r++ = (float) TIFFGetR(*ptr_in);
+        *ptr_g++ = (float) TIFFGetG(*ptr_in);
+        *ptr_b++ = (float) TIFFGetB(*ptr_in);
+        *ptr_a++ = (float) TIFFGetA(*ptr_in);
+        ptr_in++;
+    }
+
+    free(data_tiff);
+
+    return data;
 }
 
 /**
@@ -232,7 +166,47 @@ float *read_tiff_rgba_f32(const char *fname, size_t * nx, size_t * ny)
  */
 unsigned char *read_tiff_rgba_u8(const char *fname, size_t * nx, size_t * ny)
 {
-    return (unsigned char *) read_tiff_rgba(fname, nx, ny, DT_U8);
+    uint32 *data_tiff = NULL;
+    uint32 *ptr_in, *ptr_end;
+    unsigned char *data = NULL;
+    unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+
+    /* get the raw TIFF data */
+    if (NULL == (data_tiff = read_tiff_rgba_raw(fname, nx, ny)))
+        return NULL;
+    ptr_in = data_tiff;
+    ptr_end = ptr_in + *nx * *ny;
+
+    /* allocate the RGBAarray */
+    if (NULL == (data = (unsigned char *)
+                 malloc(4 * *nx * *ny * sizeof(unsigned char))))
+    {
+        free(data_tiff);
+        return NULL;
+    }
+
+    /* setup the pointers */
+    ptr_r = data;
+    ptr_g = ptr_r + *nx * *ny;
+    ptr_b = ptr_g + *nx * *ny;
+    ptr_a = ptr_b + *nx * *ny;
+
+    /*
+     * deinterlace the TIFF raw array (ptr_in)
+     * into four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+     */
+    while (ptr_in < ptr_end)
+    {
+        *ptr_r++ = (unsigned char) TIFFGetR(*ptr_in);
+        *ptr_g++ = (unsigned char) TIFFGetG(*ptr_in);
+        *ptr_b++ = (unsigned char) TIFFGetB(*ptr_in);
+        *ptr_a++ = (unsigned char) TIFFGetA(*ptr_in);
+        ptr_in++;
+    }
+
+    free(data_tiff);
+
+    return data;
 }
 
 /*
@@ -315,22 +289,20 @@ static int write_tiff_rgba_raw(const char *fname, const uint32 * data_tiff,
                                            | (a & 0xff) << 24)
 
 /**
- * @brief save four contiguous arrays into a TIFF file
+ * @brief save four contiguous float arrays into a TIFF file
  *
- * The array balues are supposed in [0,255].
- * 
  * @param fname TIFF file name
  * @param data input array of float values supposed in [0,255]
  * @param nx, ny array size
- * @param dtype the input data type : DT_U8 or DT_F32
  *
  * @return 0 if OK, != 0 if an error occured
  */
-static int write_tiff_rgba(const char *fname, const void *data,
-                           size_t nx, size_t ny, int dtype)
+int write_tiff_rgba_f32(const char *fname, const float *data,
+                        size_t nx, size_t ny)
 {
     uint32 *data_tiff = NULL;
     uint32 *ptr_out, *ptr_end;
+    const float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
     int retval;
 
     /* check allocaton */
@@ -343,53 +315,21 @@ static int write_tiff_rgba(const char *fname, const void *data,
     ptr_out = data_tiff;
     ptr_end = ptr_out + nx * ny;
 
-    switch (dtype)
-    {
-    case DT_U8:
-        {
-            const unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+    /* setup the pointers */
+    ptr_r = (float *) data;
+    ptr_g = ptr_r + nx * ny;
+    ptr_b = ptr_g + nx * ny;
+    ptr_a = ptr_b + nx * ny;
 
-            /* setup the pointers */
-            ptr_r = (unsigned char *) data;
-            ptr_g = ptr_r + nx * ny;
-            ptr_b = ptr_g + nx * ny;
-            ptr_a = ptr_b + nx * ny;
-
-            /*
-             * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-             * into the TIFF raw array (ptr_out)
-             */
-            while (ptr_out < ptr_end)
-                *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++),
-                                          (uint8) (*ptr_g++),
-                                          (uint8) (*ptr_b++),
-                                          (uint8) (*ptr_a++));
-            break;
-        }
-    case DT_F32:
-        {
-            const float *ptr_r, *ptr_g, *ptr_b, *ptr_a;
-
-            /* setup the pointers */
-            ptr_r = (float *) data;
-            ptr_g = ptr_r + nx * ny;
-            ptr_b = ptr_g + nx * ny;
-            ptr_a = ptr_b + nx * ny;
-
-            /*
-             * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
-             * into the TIFF raw array (ptr_out)
-             */
-            while (ptr_out < ptr_end)
-                *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++ + .5),
-                                          (uint8) (*ptr_g++ + .5),
-                                          (uint8) (*ptr_b++ + .5),
-                                          (uint8) (*ptr_a++ + .5));
-            break;
-        }
-    default:
-        return -1;
-    }
+    /*
+     * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+     * into the TIFF raw array (ptr_out)
+     */
+    while (ptr_out < ptr_end)
+        *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++ + .5),
+                                  (uint8) (*ptr_g++ + .5),
+                                  (uint8) (*ptr_b++ + .5),
+                                  (uint8) (*ptr_a++ + .5));
 
     /* write the file */
     retval = write_tiff_rgba_raw(fname, data_tiff, nx, ny);
@@ -397,21 +337,6 @@ static int write_tiff_rgba(const char *fname, const void *data,
     free(data_tiff);
 
     return retval;
-}
-
-/**
- * @brief save four contiguous float arrays into a TIFF file
- *
- * @param fname TIFF file name
- * @param data input array of float values supposed in [0,255]
- * @param nx, ny array size
- *
- * @return 0 if OK, != 0 if an error occured
- */
-int write_tiff_rgba_f32(const char *fname, const float *data,
-                        size_t nx, size_t ny)
-{
-    return write_tiff_rgba(fname, (void *) data, nx, ny, DT_F32);
 }
 
 /**
@@ -426,5 +351,40 @@ int write_tiff_rgba_f32(const char *fname, const float *data,
 int write_tiff_rgba_u8(const char *fname, const unsigned char *data,
                        size_t nx, size_t ny)
 {
-    return write_tiff_rgba(fname, (void *) data, nx, ny, DT_U8);
+    uint32 *data_tiff = NULL;
+    uint32 *ptr_out, *ptr_end;
+    const unsigned char *ptr_r, *ptr_g, *ptr_b, *ptr_a;
+    int retval;
+
+    /* check allocaton */
+    if (NULL == data)
+        return -1;
+
+    /* create the tiff array */
+    if (NULL == (data_tiff = (uint32 *) malloc(nx * ny * sizeof(uint32))))
+        return -1;
+    ptr_out = data_tiff;
+    ptr_end = ptr_out + nx * ny;
+
+    /* setup the pointers */
+    ptr_r = (unsigned char *) data;
+    ptr_g = ptr_r + nx * ny;
+    ptr_b = ptr_g + nx * ny;
+    ptr_a = ptr_b + nx * ny;
+
+    /*
+     * interlace four arrays (ptr_r, ptr_g, ptr_b, ptr_a)
+     * into the TIFF raw array (ptr_out)
+     */
+    while (ptr_out < ptr_end)
+        *ptr_out++ = TIFFPackRGBA((uint8) (*ptr_r++),
+                                  (uint8) (*ptr_g++),
+                                  (uint8) (*ptr_b++), (uint8) (*ptr_a++));
+
+    /* write the file */
+    retval = write_tiff_rgba_raw(fname, data_tiff, nx, ny);
+
+    free(data_tiff);
+
+    return retval;
 }
