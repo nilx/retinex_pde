@@ -40,7 +40,7 @@
  * @param ptr_min, ptr_max pointers to the returned values, ignored if NULL
  */
 static void minmax_f32(const float *data, size_t size,
-		       float *ptr_min, float *ptr_max)
+                       float *ptr_min, float *ptr_max)
 {
     const float *ptr_data, *ptr_end;
     float min, max;
@@ -96,8 +96,8 @@ static void minmax_f32(const float *data, size_t size,
  * @param ptr_min, ptr_max computed min/max, ignored if NULL
  */
 static void minmax_histo_f32(float *data, size_t size,
-			     size_t nb_min, size_t nb_max,
-			     float *ptr_min, float *ptr_max)
+                             size_t nb_min, size_t nb_max,
+                             float *ptr_min, float *ptr_max)
 {
     float *data_ptr, *data_end;
     size_t *histo;
@@ -114,8 +114,8 @@ static void minmax_histo_f32(float *data, size_t size,
     }
     if (nb_min + nb_max >= size)
     {
-	nb_min = (size - 1) / 2;
-	nb_max = (size - 1) / 2;
+        nb_min = (size - 1) / 2;
+        nb_max = (size - 1) / 2;
         fprintf(stderr, "the number of pixels to flatten is too large\n");
         fprintf(stderr, "using (size - 1) / 2\n");
     }
@@ -163,33 +163,29 @@ static void minmax_histo_f32(float *data, size_t size,
     /* get the new min/max */
     if (NULL != ptr_min)
     {
-	/* simple forward traversal of the cumulative histogram */
-	/* search the first value > flat_nb_min */
+        /* simple forward traversal of the cumulative histogram */
+        /* search the first value > flat_nb_min */
         histo_ptr = histo;
         while (histo_ptr < histo_end && *histo_ptr <= nb_min)
             histo_ptr++;
-	/* the corresponding histogram value is the current cell indice */
-        *ptr_min = histo_ptr - histo;
-	/* get the original float data value */
-        *ptr_min += (float) histo_offset;
+        /* the corresponding histogram value is the current cell indice */
+        *ptr_min = (float) (histo_ptr - histo) + histo_offset;
     }
     if (NULL != ptr_max)
     {
-	/* simple backward traversal of the cumulative histogram */
-	/* search the first value <= size - flat_nb_max */
+        /* simple backward traversal of the cumulative histogram */
+        /* search the first value <= size - flat_nb_max */
         histo_ptr = histo_end - 1;
         while (histo_ptr >= histo && *histo_ptr > (size - nb_max))
             histo_ptr--;
-	/*
-	 * if we are not at the end of the histogram,
-	 * get to the next cell,
-	 * ie the last (backward) value > size - flat_nb_max
-	 */
-	if (histo_ptr < histo_end - 1)
-	    histo_ptr++;
-        *ptr_max = histo_ptr - histo;
-	/* get the original float data value */
-        *ptr_max += (float) histo_offset;
+        /*
+         * if we are not at the end of the histogram,
+         * get to the next cell,
+         * ie the last (backward) value > size - flat_nb_max
+         */
+        if (histo_ptr < histo_end - 1)
+            histo_ptr++;
+        *ptr_max = (float) (histo_ptr - histo) + histo_offset;
     }
 
     return;
@@ -211,8 +207,8 @@ static void minmax_histo_f32(float *data, size_t size,
  * @return data
  */
 float *normalize_histo_f32(float *data, size_t size,
-			   float target_min, float target_max,
-			   size_t flat_nb_min, size_t flat_nb_max)
+                           float target_min, float target_max,
+                           size_t flat_nb_min, size_t flat_nb_max)
 {
     float *data_ptr, *data_end;
     float min, max;
@@ -227,8 +223,8 @@ float *normalize_histo_f32(float *data, size_t size,
     }
     if (flat_nb_min + flat_nb_max >= size)
     {
-	flat_nb_min = (size - 1) / 2;
-	flat_nb_max = (size - 1) / 2;
+        flat_nb_min = (size - 1) / 2;
+        flat_nb_max = (size - 1) / 2;
         fprintf(stderr, "the number of pixels to flatten is too large\n");
         fprintf(stderr, "using (size - 1) / 2\n");
     }
@@ -262,24 +258,24 @@ float *normalize_histo_f32(float *data, size_t size,
     else
     {
         /*
-	 * normalize the data
-	 * such that norm(min) = target_min
-	 *           norm(max) = target_max
-	 * norm(x) = (x - min) * (t_max - t_min) / (max - min) + t_min
-	 */
-	/* we can't use a lookup table for float values */
+         * normalize the data
+         * such that norm(min) = target_min
+         *           norm(max) = target_max
+         * norm(x) = (x - min) * (t_max - t_min) / (max - min) + t_min
+         */
+        /* we can't use a lookup table for float values */
         scale = (double) (target_max - target_min) / (double) (max - min);
         while (data_ptr < data_end)
         {
-	    if (*data_ptr < min)
-		*data_ptr++ = target_min;
-	    else if (*data_ptr < max)
-	    {
-		*data_ptr = (float) ((*data_ptr - min) * scale + target_min);
-		data_ptr++;
-	    }
-	    else
-		*data_ptr++ = target_max;
+            if (*data_ptr < min)
+                *data_ptr++ = target_min;
+            else if (*data_ptr < max)
+            {
+                *data_ptr = (float) ((*data_ptr - min) * scale + target_min);
+                data_ptr++;
+            }
+            else
+                *data_ptr++ = target_max;
         }
     }
     return data;

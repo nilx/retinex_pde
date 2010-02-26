@@ -39,7 +39,7 @@
  */
 int main(int argc, char *const *argv)
 {
-    float t;                                    /* retinex threshold */
+    float t;                    /* retinex threshold */
     int channel;
     unsigned int nx, ny;
     float *data_norm, *data_rtnx;
@@ -53,54 +53,58 @@ int main(int argc, char *const *argv)
     /* wrong number of parameters : simple help info */
     if (5 != argc)
     {
-        fprintf(stderr, "usage : %s T in.tiff norm.tiff rtnx.tiff\n", argv[0]);
+        fprintf(stderr, "usage : %s T in.tiff norm.tiff rtnx.tiff\n",
+                argv[0]);
         fprintf(stderr, "        T retinex threshold [0...255]\n");
         return EXIT_FAILURE;
     }
-    
+
     /* retinex threshold */
     t = atof(argv[1]);
     if (0. > t || 255. < t)
     {
-	fprintf(stderr, "the retinex threshold must be in [0..255]\n");
+        fprintf(stderr, "the retinex threshold must be in [0..255]\n");
         return EXIT_FAILURE;
     }
 
     /* read the TIFF image */
     if (NULL == (data_norm = read_tiff_rgba_f32(argv[2], &nx, &ny)))
     {
-	fprintf(stderr, "the image could not be properly read\n");
+        fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
 
     /* allocate data_rtnx and fill with a copy of data_norm */
-    if (NULL == (data_rtnx =
-		 (float *) malloc(4 * nx * ny * sizeof(float))))
+    if (NULL == (data_rtnx = (float *) malloc(4 * nx * ny * sizeof(float))))
     {
-	fprintf(stderr, "allocation error\n");
-	free(data_norm);
+        fprintf(stderr, "allocation error\n");
+        free(data_norm);
         return EXIT_FAILURE;
     }
     memcpy(data_rtnx, data_norm, 4 * nx * ny * sizeof(float));
 
     /* normalize data_norm with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
-	normalize_histo_f32(data_norm + channel * nx * ny, nx * ny,
-			    0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
+        (void) normalize_histo_f32(data_norm + channel * nx * ny,
+                                   nx * ny, 0., 255.,
+                                   (size_t) 0.015 * nx * ny,
+                                   (size_t) 0.015 * nx * ny);
     write_tiff_rgba_f32(argv[3], data_norm, nx, ny);
     free(data_norm);
 
     /* run retinex on data_rtnx, normalize with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
     {
-	if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t))
-	{
-	    fprintf(stderr, "the retinex PDE failed\n");
-	    free(data_rtnx);
-	    return EXIT_FAILURE;
-	}
-	normalize_histo_f32(data_rtnx + channel * nx * ny, nx * ny, 
-			    0., 255., 0.015 * nx * ny, 0.015 * nx * ny);
+        if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t))
+        {
+            fprintf(stderr, "the retinex PDE failed\n");
+            free(data_rtnx);
+            return EXIT_FAILURE;
+        }
+        (void) normalize_histo_f32(data_rtnx + channel * nx * ny,
+                                   nx * ny, 0., 255.,
+                                   (size_t) 0.015 * nx * ny,
+                                   (size_t) 0.015 * nx * ny);
     }
     write_tiff_rgba_f32(argv[4], data_rtnx, nx, ny);
     free(data_rtnx);

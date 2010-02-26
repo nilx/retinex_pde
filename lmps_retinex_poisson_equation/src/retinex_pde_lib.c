@@ -67,8 +67,8 @@
  * @todo try using blas?
  */
 static float *discrete_laplacian_threshold(float *data_out,
-					   const float *data_in,
-					   size_t nx, size_t ny, float t)
+                                           const float *data_in,
+                                           size_t nx, size_t ny, float t)
 {
     int i, j;
     float *ptr_out;
@@ -156,8 +156,7 @@ static float *discrete_laplacian_threshold(float *data_out,
  *
  * @todo handle nx=ny
  */
-static float *retinex_poisson_dct(float *data,
-				  size_t nx, size_t ny, float m)
+static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, float m)
 {
     float *ptr_data, *ptr_end;
     float *ptr_coef;
@@ -188,15 +187,15 @@ static float *retinex_poisson_dct(float *data,
 
         if (s_nx != nx)
         {
-	    /* (re) allocate the cosinus table */
+            /* (re) allocate the cosinus table */
             if (NULL != s_cosi)
                 free(s_cosi);
             if (NULL == (s_cosi = (float *) malloc(sizeof(float) * nx)))
-	    {
-		fprintf(stderr, "allocation error\n");
-		abort();
-	    }
-	    /* fill the cosinus table */
+            {
+                fprintf(stderr, "allocation error\n");
+                abort();
+            }
+            /* fill the cosinus table */
             ptr_cosi = s_cosi;
             ptr_cosi_end = ptr_cosi + nx;
             i = 0;
@@ -207,15 +206,15 @@ static float *retinex_poisson_dct(float *data,
 
         if (s_ny != ny)
         {
-	    /* (re) allocate the sinus table */
+            /* (re) allocate the sinus table */
             if (NULL != s_cosj)
                 free(s_cosj);
             if (NULL == (s_cosj = (float *) malloc(sizeof(float) * ny)))
-	    {
-		fprintf(stderr, "allocation error\n");
-		abort();
-	    }
-	    /* fill the sinus table */
+            {
+                fprintf(stderr, "allocation error\n");
+                abort();
+            }
+            /* fill the sinus table */
             ptr_cosj = s_cosj;
             ptr_cosj_end = ptr_cosj + ny;
             j = 0;
@@ -228,15 +227,15 @@ static float *retinex_poisson_dct(float *data,
         if (NULL != s_coef)
             free(s_coef);
         if (NULL == (s_coef = (float *) malloc(sizeof(float) * nx * ny)))
-	{
-	    fprintf(stderr, "allocation error\n");
-		abort();
-	}
+        {
+            fprintf(stderr, "allocation error\n");
+            abort();
+        }
 
         /* (re) compute the coefs */
-	/*
-	 * coef(i, j) = 1 / (cos(i) + cos(j) - 4 - 4 / (nx * ny - 1))
- 	 */
+        /*
+         * coef(i, j) = 1 / (cos(i) + cos(j) - 4 - 4 / (nx * ny - 1))
+         */
         cst = 4. / (s_nx * s_ny - 1);
         ptr_coef = s_coef;
         ptr_cosj = s_cosj;
@@ -321,10 +320,10 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 
     /* allocate the float-complex FFT array and the float tmp array */
     if (NULL == (data_fft = (float *) malloc(sizeof(float) * nx * ny))
-	|| NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny)))
+        || NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny)))
     {
-	fprintf(stderr, "allocation error\n");
-	abort();
+        fprintf(stderr, "allocation error\n");
+        abort();
     }
 
     /*
@@ -332,8 +331,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
      */
 
     /* compute the laplacian : data -> data_tmp */
-    (void) discrete_laplacian_threshold(data_tmp, data,
-                                            nx, ny, t);
+    (void) discrete_laplacian_threshold(data_tmp, data, nx, ny, t);
     /* create the DFT forward plan and run the DCT : data_tmp -> data_fft */
     dct_fw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_tmp, data_fft,
