@@ -10,6 +10,6 @@ set -e
 PATH=$BINPATH:$PATH
 
 retinex_pde -v > version
-retinex_pde $* -d input.tiff balanced.tiff retinex.tiff 2>&1 > stderr.txt
+retinex_pde $1 input.tiff balanced.tiff retinex.tiff 2>&1 > stderr.txt
 
 exit

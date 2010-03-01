@@ -6,15 +6,14 @@
 # the copyright notice and this notice are preserved.  This file is
 # offered as-is, without any warranty.
 
-SRCDIR	= ./src
-DEMODIR	= ./demo
-WIKIDIR	= ./wiki
-SRCDOCDIR	= ./srcdoc
+SRCDIR	= src
+DEMODIR	= demo
+WIKIDIR	= wiki
+SRCDOCDIR	= srcdoc
 DOXYCFG	= "\n\
 	PROJECT_NAME           = \"retinex pde\"\n\
 	EXTRACT_STATIC         = YES\n\
 	INPUT                  = $(SRCDIR)\n\
-	FILE_PATTERNS          = *.c *.h\n\
 	SOURCE_BROWSER         = YES\n\
 	HTML_OUTPUT            = $(SRCDOCDIR)\n\
 	GENERATE_LATEX         = NO\n\
@@ -52,7 +51,7 @@ updatewiki	:
 	cp -f src.tgz src.zip srcdoc.tgz srcdoc.zip $(WIKIDIR)
 	$(RM) -r $(WIKIDIR)/srcdoc
 	tar xvzf $(WIKIDIR)/srcdoc.tgz -C $(WIKIDIR)
-	cd $(WIKIDIR) && git add ./srcdoc && git commit -a && git push
+	cd $(WIKIDIR) && git add * && git commit -a && git push
 
 .PHONY: distclean
 distclean	:
