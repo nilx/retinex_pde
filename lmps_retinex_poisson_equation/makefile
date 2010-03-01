@@ -6,15 +6,15 @@
 # the copyright notice and this notice are preserved.  This file is
 # offered as-is, without any warranty.
 
-PKGNAME	= retinex_pde
 SRCDIR	= ./src
+DEMODIR	= ./demo
+WIKIDIR	= ./wiki
 SRCDOCDIR	= ./srcdoc
 DOXYCFG	= "\n\
-	PROJECT_NAME           = $(PKGNAME)\n\
+	PROJECT_NAME           = \"retinex pde\"\n\
 	EXTRACT_STATIC         = YES\n\
 	INPUT                  = $(SRCDIR)\n\
 	FILE_PATTERNS          = *.c *.h\n\
-	RECURSIVE              = YES\n\
 	SOURCE_BROWSER         = YES\n\
 	HTML_OUTPUT            = $(SRCDOCDIR)\n\
 	GENERATE_LATEX         = NO\n\
@@ -24,13 +24,12 @@ DOXYCFG	= "\n\
 
 
 default: src srcdoc
-.PHONY	: src srcdoc distclean
 
+.PHONY	: src srcdoc
 src	:
 	$(MAKE) -C $(SRCDIR) distclean
 	/bin/tar cvzf src.tgz $(SRCDIR)
 	zip -qr9 src.zip $(SRCDIR)
-
 srcdoc	:
 	doxygen -g - > doxygen.conf
 	echo $(DOXYCFG) >> doxygen.conf
@@ -41,7 +40,23 @@ srcdoc	:
 	zip -qr9 srcdoc.zip $(SRCDOCDIR)
 	$(RM) -r $(SRCDOCDIR)
 
+.PHONY: update updatedemo updatewiki
+update	: updatedemo updatewiki
+updatedemo	:
+	cp script/retinex_pde.sh $(DEMODIR)
+	$(MAKE) -C $(SRCDIR) CC="ccache cc"
+	cp $(SRCDIR)/retinex_pde $(DEMODIR)
+	echo "update the demo" #$(MAKE) -C $(DEMODIR)
+updatewiki	:
+	$(MAKE) src srcdoc
+	cp -f src.tgz src.zip srcdoc.tgz srcdoc.zip $(WIKIDIR)
+	$(RM) -r $(WIKIDIR)/srcdoc
+	tar xvzf $(WIKIDIR)/srcdoc.tgz -C $(WIKIDIR)
+	cd $(WIKIDIR) && git add ./srcdoc && git commit -a && git push
+
+.PHONY: distclean
 distclean	:
+	$(MAKE) -C $(SRCDIR) distclean
 	$(RM) src.tgz src.zip
 	$(RM) srcdoc.tgz srcdoc.zip
 

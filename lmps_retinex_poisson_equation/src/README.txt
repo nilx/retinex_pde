@@ -9,16 +9,16 @@
 # OVERVIEW
 
 This source code provides an implementation of the Retinex theory by a
-Poisson equation, as described on
+Poisson equation, as described in IPOL
     http://www.ipol.im/pub/algo/lmps_retinex_poisson_equation/.
 
-This program reads a TIFF image, performs a DFT, then solved the
+This program reads a TIFF image, performs a DFT, then solves the
 Poisson equation in the Fourier space and performs an inverse DFT.
 The result is normalized and written as a TIFF image.
 
 The same normalization is also performed on a unmodified image, for
 comparison. The normalization method is the "simplest color balance",
-as described on
+as described in IPOL
     http://www.ipol.im/pub/algo/lmps_simplest_color_balance/.
 
 Only 8bit RGB TIFF images are handled. Other TIFF files are implicitly
@@ -44,7 +44,7 @@ Alternatively, you can manually compile
 
 Multi-threading is possible, with the FFTW_NTHREADS parameter:
     cc io_tiff.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c \
-        -DFFTW_NTHREADS -ltiff -lfftw3f -o retinex_pde
+        -DFFTW_NTHREADS -ltiff -lfftw3f -lfftw3f_threads -o retinex_pde
 
 # USAGE
 
