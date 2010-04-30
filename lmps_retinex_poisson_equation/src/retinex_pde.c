@@ -87,8 +87,8 @@ int main(int argc, char *const *argv)
     for (channel = 0; channel < 3; channel++)
         (void) normalize_histo_f32(data_norm + channel * nx * ny,
                                    nx * ny, 0., 255.,
-                                   (size_t) 0.015 * nx * ny,
-                                   (size_t) 0.015 * nx * ny);
+                                   (size_t) (0.015 * nx * ny),
+				   (size_t) (0.015 * nx * ny));
     write_tiff_rgba_f32(argv[3], data_norm, nx, ny);
     free(data_norm);
 
@@ -103,8 +103,8 @@ int main(int argc, char *const *argv)
         }
         (void) normalize_histo_f32(data_rtnx + channel * nx * ny,
                                    nx * ny, 0., 255.,
-                                   (size_t) 0.015 * nx * ny,
-                                   (size_t) 0.015 * nx * ny);
+                                   (size_t) (0.015 * nx * ny),
+				   (size_t) (0.015 * nx * ny));
     }
     write_tiff_rgba_f32(argv[4], data_rtnx, nx, ny);
     free(data_rtnx);
