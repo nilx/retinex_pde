@@ -20,8 +20,8 @@
  * @brief command-line interface
  *
  * The input image is normalized to [0-255], ignoring 3% pixels at the
- * beginning and end of the histogram. The same normalization is also
- * processed after a retinex PDE transform.
+ * beginning and end of the histogram, for obtainig the normalized image output. The same normalization is 
+ * processed after the retinex PDE transform, for obtaining the retnex output image.
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  */
@@ -42,7 +42,7 @@ int main(int argc, char *const *argv)
     float t;                    /* retinex threshold */
     int channel;
     unsigned int nx, ny;
-    float *data_norm, *data_rtnx;
+    float *data_norm, *data_rtnx, *data;
 
     /* "-v" option : version info */
     if (2 <= argc && 0 == strcmp("-v", argv[1]))
@@ -68,20 +68,29 @@ int main(int argc, char *const *argv)
     }
 
     /* read the TIFF image */
-    if (NULL == (data_norm = read_tiff_rgba_f32(argv[2], &nx, &ny)))
+    if (NULL == (data = read_tiff_rgba_f32(argv[2], &nx, &ny)))
     {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
 
-    /* allocate data_rtnx and fill with a copy of data_norm */
+    /* allocate data_rtnx and data_norm and fill both with a copy of data */
     if (NULL == (data_rtnx = (float *) malloc(4 * nx * ny * sizeof(float))))
     {
         fprintf(stderr, "allocation error\n");
-        free(data_norm);
+        free(data);
         return EXIT_FAILURE;
     }
-    memcpy(data_rtnx, data_norm, 4 * nx * ny * sizeof(float));
+
+    if (NULL == (data_norm = (float *) malloc(4 * nx * ny * sizeof(float))))
+    {
+        fprintf(stderr, "allocation error\n");
+        free(data);
+        return EXIT_FAILURE;
+    }
+
+    memcpy(data_rtnx, data, 4 * nx * ny * sizeof(float));
+    memcpy(data_norm, data, 4 * nx * ny * sizeof(float));
 
     /* normalize data_norm with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
@@ -108,6 +117,7 @@ int main(int argc, char *const *argv)
     }
     write_tiff_rgba_f32(argv[4], data_rtnx, nx, ny);
     free(data_rtnx);
+    free(data);
 
     return EXIT_SUCCESS;
 }

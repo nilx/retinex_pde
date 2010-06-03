@@ -144,7 +144,9 @@ static float *discrete_laplacian_threshold(float *data_out,
  *
  * @f$ u(i, j) = F(i, j) * m / (2 cos(i PI / nx)
  *                              + 2 cos(j PI / ny)
- *                              - 4 - 4 / (nx ny - 1))) @f$
+ *                              - 4 ) @f$ 
+ * if (i, j) \not = (0, 0)
+ * @f$ u(0, 0) = 0
  *
  * The trigonometric data is only computed once if the function is
  * called many times with the same nx, ny and m parameters (common for
@@ -250,7 +252,15 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
         {
             ptr_cosi = s_cosi;
             while (ptr_cosi < ptr_cosi_end)
-                *ptr_coef++ = m2 / (*ptr_cosi++ + *ptr_cosj - 2. - cst);
+            {
+              if((*ptr_cosi + *ptr_cosj - 2.)!=0.)
+                *ptr_coef++ = m2 / (*ptr_cosi++ + *ptr_cosj - 2.);
+              else
+              {
+                *ptr_coef++=0.;
+                 ptr_cosi++;
+	      }
+            }
             ptr_cosj++;
         }
     }
@@ -258,7 +268,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
      * end of the conditional trigonometric recomputation
      * we now have an array s_coef of nx x ny coefficients,
      * with s_coef[i, j] = 
-     * m / ( 2. cos(i PI / nx) + cos(j PI / ny) - 4. - 4. / (nx ny - 1))
+     * m / ( 2. cos(i PI / nx) + 2. cos(j PI / ny) - 4. )
      */
 
     /* multiply the dct coefficients */
@@ -278,7 +288,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 /**
  * @brief retinex PDE implementation
  *
- * This function solves the Redinex PDE equation with forward and
+ * This function solves the Retinex PDE equation with forward and
  * backward DCT.
  *
  * The input array is processed as follow:
@@ -291,7 +301,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
  * @f$ \hat{u}(i, j) = \frac{\hat{F}(i, j)}
                             {2 \cos(\frac{i \pi}{n_x})
  *                           + 2 \cos(\frac{j \pi}{n_y})
- *                           - 4 - 4 / (n_x n_y - 1))} @f$;
+ *                           - 4 } @f$;
  * @li this data is transformed by backward DFT.
  *
  * @param data input/output array
