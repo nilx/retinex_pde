@@ -3,6 +3,7 @@
 # ABOUT
 
 * Author    : Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
+              Ana Belen Petro <anabelen.petro@uib.es>
 * Copyright : (C) 2009, 2010 IPOL Image Processing On Line http://www.ipol.im/
 * Licence   : GPL v3+, see GPLv3.txt
 

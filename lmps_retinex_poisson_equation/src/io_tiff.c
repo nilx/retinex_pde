@@ -33,6 +33,8 @@
 
 #include <tiffio.h>
 
+#include "io_tiff.h"
+
 /** internal data type shortcut for unsigned char */
 #define DT_U8  0x01
 /** internal data type shortcut for float */

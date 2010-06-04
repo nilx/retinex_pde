@@ -15,6 +15,7 @@ DOXYCFG	= "\n\
 	EXTRACT_STATIC         = YES\n\
 	INPUT                  = $(SRCDIR)\n\
 	SOURCE_BROWSER         = YES\n\
+	EXAMPLE_PATH           = $(SRCDIR)\n\
 	HTML_OUTPUT            = $(SRCDOCDIR)\n\
 	GENERATE_LATEX         = NO\n\
 	HAVE_DOT               = YES\n\

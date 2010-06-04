@@ -20,6 +20,7 @@
  * @brief laplacian, DFT and Poisson routines
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
+ * @author Ana Belen Petro <anabelen.petro@uib.es>
  */
 
 #include <stdlib.h>
@@ -27,6 +28,8 @@
 #include <float.h>
 
 #include <fftw3.h>
+
+#include "retinex_pde_lib.h"
 
 /* M_PI is a POSIX definition */
 #ifndef M_PI
@@ -144,9 +147,9 @@ static float *discrete_laplacian_threshold(float *data_out,
  *
  * @f$ u(i, j) = F(i, j) * m / (2 cos(i PI / nx)
  *                              + 2 cos(j PI / ny)
- *                              - 4 ) @f$ 
- * if (i, j) \not = (0, 0)
- * @f$ u(0, 0) = 0
+ *                              - 4 ) @f$
+ * if @f$ (i, j) \neq (0, 0) @f$,
+ * @f$ u(0, 0) = 0 @f$
  *
  * The trigonometric data is only computed once if the function is
  * called many times with the same nx, ny and m parameters (common for
@@ -189,7 +192,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     if (nx != s_nx || ny != s_ny || 0. < fabs(m - s_m))
     {
         int i, j;
-        double cst, m2;
+        double m2;
         double *ptr_cosi, *ptr_cosi_end, *ptr_cosj, *ptr_cosj_end;
 
         if (s_nx != nx)
@@ -202,7 +205,10 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
                 fprintf(stderr, "allocation error\n");
                 abort();
             }
-            /* fill the cosinus table */
+            /*
+             * fill the cosinus table,
+             * s_cosi[i] = cos(i Pi / nx) for i in [0..nx[
+             */
             ptr_cosi = s_cosi;
             ptr_cosi_end = ptr_cosi + nx;
             i = 0;
@@ -213,7 +219,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 
         if (s_ny != ny)
         {
-            /* (re) allocate the sinus table */
+            /* (re) allocate the cosinus table */
             if (NULL != s_cosj)
                 free(s_cosj);
             if (NULL == (s_cosj = (double *) malloc(sizeof(double) * ny)))
@@ -221,7 +227,10 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
                 fprintf(stderr, "allocation error\n");
                 abort();
             }
-            /* fill the sinus table */
+            /*
+             * fill the cosinus table,
+             * s_cosj[j] = cos(j Pi / nx) for j in [0..ny[
+             */
             ptr_cosj = s_cosj;
             ptr_cosj_end = ptr_cosj + ny;
             j = 0;
@@ -238,37 +247,40 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
             fprintf(stderr, "allocation error\n");
             abort();
         }
-
         s_m = m;
 
-        /* (re) compute the coefs */
-        cst = 2. / (s_nx * s_ny - 1);
+        /*
+         * fill the coefs table,
+         * s_coef[i, j] = m / (2 * s_cosi[i] + 2 * s_cosj[j] - 4))
+         * s_coef[0, 0] = 0
+         */
         m2 = s_m / 2.;
         ptr_coef = s_coef;
+        ptr_cosi = s_cosi;
         ptr_cosj = s_cosj;
-        ptr_cosj_end = s_cosj + s_ny;
         ptr_cosi_end = s_cosi + s_nx;
+        ptr_cosj_end = s_cosj + s_ny;
+        /* handle the first value, s_coef[0, 0] = 0 */
+        *ptr_coef++ = 0.;
+        ptr_cosi++;
         while (ptr_cosj < ptr_cosj_end)
         {
-            ptr_cosi = s_cosi;
             while (ptr_cosi < ptr_cosi_end)
-            {
-              if((*ptr_cosi + *ptr_cosj - 2.)!=0.)
+                /*
+                 * by construction, we always have
+                 * *ptr_cosi + *ptr_cosj != 2.
+                 */
                 *ptr_coef++ = m2 / (*ptr_cosi++ + *ptr_cosj - 2.);
-              else
-              {
-                *ptr_coef++=0.;
-                 ptr_cosi++;
-	      }
-            }
             ptr_cosj++;
+            ptr_cosi = s_cosi;
         }
     }
     /*
      * end of the conditional trigonometric recomputation
      * we now have an array s_coef of nx x ny coefficients,
-     * with s_coef[i, j] = 
-     * m / ( 2. cos(i PI / nx) + 2. cos(j PI / ny) - 4. )
+     * with
+     * s_coef[i, j] = m / ( 2. cos(i PI / nx) + 2. cos(j PI / ny) - 4. )
+     * s_coef[0, 0] = 0
      */
 
     /* multiply the dct coefficients */

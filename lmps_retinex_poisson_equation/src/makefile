@@ -13,7 +13,7 @@ OBJ	= $(CSRC:.c=.o)
 BIN	= retinex_pde
 
 COPT	= -O3 -funroll-loops -fomit-frame-pointer
-CFLAGS	+= -std=c99 -Wall -Wextra -Werror $(COPT)
+CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror $(COPT)
 
 default: $(BIN)
 

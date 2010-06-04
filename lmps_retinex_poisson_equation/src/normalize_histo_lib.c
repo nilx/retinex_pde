@@ -32,6 +32,8 @@
 #include <math.h>
 #include <limits.h>
 
+#include "normalize_histo_lib.h"
+
 /**
  * @brief get the min/max of a float array
  *
