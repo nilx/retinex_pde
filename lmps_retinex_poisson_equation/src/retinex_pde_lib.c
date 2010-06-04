@@ -20,7 +20,6 @@
  * @brief laplacian, DFT and Poisson routines
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
- * @author Ana Belen Petro <anabelen.petro@uib.es>
  */
 
 #include <stdlib.h>

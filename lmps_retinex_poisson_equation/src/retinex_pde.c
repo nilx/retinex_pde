@@ -34,7 +34,6 @@
  * normalization process, without retinex transform.
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
- * @author Ana Belen Petro <anabelen.petro@uib.es>
  */
 
 #include <stdio.h>
@@ -53,7 +52,7 @@ int main(int argc, char *const *argv)
     float t;                    /* retinex threshold */
     int channel;
     unsigned int nx, ny;
-    float *data_norm, *data_rtnx;
+    float *data, *data_rtnx;
 
     /* "-v" option : version info */
     if (2 <= argc && 0 == strcmp("-v", argv[1]))
@@ -78,30 +77,30 @@ int main(int argc, char *const *argv)
         return EXIT_FAILURE;
     }
 
-    /* read the TIFF image into data_norm */
-    if (NULL == (data_norm = read_tiff_rgba_f32(argv[2], &nx, &ny)))
+    /* read the TIFF image into data */
+    if (NULL == (data = read_tiff_rgba_f32(argv[2], &nx, &ny)))
     {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
 
-    /* allocate data_rtnx and fill it with a copy of data_norm */
+    /* allocate data_rtnx and fill it with a copy of data */
     if (NULL == (data_rtnx = (float *) malloc(4 * nx * ny * sizeof(float))))
     {
         fprintf(stderr, "allocation error\n");
-        free(data_norm);
+        free(data);
         return EXIT_FAILURE;
     }
-    memcpy(data_rtnx, data_norm, 4 * nx * ny * sizeof(float));
+    memcpy(data_rtnx, data, 4 * nx * ny * sizeof(float));
 
-    /* normalize data_norm with 3% saturation and save */
+    /* normalize data with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
-        (void) normalize_histo_f32(data_norm + channel * nx * ny,
+        (void) normalize_histo_f32(data + channel * nx * ny,
                                    nx * ny, 0., 255.,
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
-    write_tiff_rgba_f32(argv[3], data_norm, nx, ny);
-    free(data_norm);
+    write_tiff_rgba_f32(argv[3], data, nx, ny);
+    free(data);
 
     /* run retinex on data_rtnx, normalize with 3% saturation and save */
     for (channel = 0; channel < 3; channel++)
