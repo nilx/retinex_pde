@@ -79,7 +79,7 @@ static void minmax_f32(const float *data, size_t size,
 }
 
 /**
- * @brief get mn/max quantiles from a float array such that a given
+ * @brief get min/max quantiles from a float array such that a given
  * number of pixels is out of this interval
  *
  * This function implicitly assumes that the float values can be
@@ -191,6 +191,7 @@ static void minmax_histo_f32(float *data, size_t size,
         *ptr_max = (float) (histo_ptr - histo) + histo_offset;
     }
 
+    free(histo);
     return;
 }
 

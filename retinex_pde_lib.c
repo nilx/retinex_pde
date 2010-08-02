@@ -66,8 +66,8 @@
  *
  * @return data_out
  *
- * @todo full iteration and switch()?
- * @todo MMX/SSE/intrinsics?
+ * @todo openmp?
+ * @todo vectorization?
  * @todo try using blas?
  */
 static float *discrete_laplacian_threshold(float *data_out,
