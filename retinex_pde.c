@@ -42,7 +42,7 @@
 
 #include "retinex_pde_lib.h"
 #include "normalize_histo_lib.h"
-#include "io_tiff.h"
+#include "io_png.h"
 
 /**
  * @brief main function call
@@ -50,8 +50,8 @@
 int main(int argc, char *const *argv)
 {
     float t;                    /* retinex threshold */
-    int channel;
-    unsigned int nx, ny;
+    size_t nx, ny, nc;
+    size_t channel, nc_non_alpha;
     float *data, *data_rtnx;
 
     /* "-v" option : version info */
@@ -78,32 +78,38 @@ int main(int argc, char *const *argv)
     }
 
     /* read the TIFF image into data */
-    if (NULL == (data = read_tiff_rgba_f32(argv[2], &nx, &ny)))
+    if (NULL == (data = read_png_f32(argv[2], &nx, &ny, &nc)))
     {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
 
     /* allocate data_rtnx and fill it with a copy of data */
-    if (NULL == (data_rtnx = (float *) malloc(4 * nx * ny * sizeof(float))))
+    if (NULL == (data_rtnx = (float *) malloc(nc * nx * ny * sizeof(float))))
     {
         fprintf(stderr, "allocation error\n");
         free(data);
         return EXIT_FAILURE;
     }
-    memcpy(data_rtnx, data, 4 * nx * ny * sizeof(float));
+    memcpy(data_rtnx, data, nc * nx * ny * sizeof(float));
+
+    /* the image has either 1 or 3 non-alpha channels */
+    if (3 <= nc)
+	nc_non_alpha = 3;
+    else
+	nc_non_alpha = 1;
 
     /* normalize data with 3% saturation and save */
-    for (channel = 0; channel < 3; channel++)
+    for (channel = 0; channel < nc_non_alpha; channel++)
         (void) normalize_histo_f32(data + channel * nx * ny,
                                    nx * ny, 0., 255.,
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
-    write_tiff_rgba_f32(argv[3], data, nx, ny);
+    write_png_f32(argv[3], data, nx, ny, nc);
     free(data);
 
     /* run retinex on data_rtnx, normalize with 3% saturation and save */
-    for (channel = 0; channel < 3; channel++)
+    for (channel = 0; channel < nc_non_alpha; channel++)
     {
         if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t))
         {
@@ -116,7 +122,7 @@ int main(int argc, char *const *argv)
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
     }
-    write_tiff_rgba_f32(argv[4], data_rtnx, nx, ny);
+    write_png_f32(argv[4], data_rtnx, nx, ny, nc);
     free(data_rtnx);
 
     return EXIT_SUCCESS;

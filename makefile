@@ -6,7 +6,7 @@
 # the copyright notice and this notice are preserved.  This file is
 # offered as-is, without any warranty.
 
-CSRC	= io_tiff.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c
+CSRC	= io_png.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c
 
 SRC	= $(CSRC)
 OBJ	= $(CSRC:.c=.o)
@@ -14,27 +14,34 @@ BIN	= retinex_pde
 
 COPT	= -O3 -funroll-loops -fomit-frame-pointer
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror $(COPT)
+LDFLAGS	+= -lpng -lfftw3f
 
 default: $(BIN)
 
 %.o	: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(BIN)	: $(OBJ)
-	$(CC) $(CFLAGS) -o $@ -ltiff -lfftw3f $^
-
-.PHONY	: check
-check	: $(CSRC)
-	for F in $^; do \
-		expand $$F > $$F.tmp; \
-		mv $$F.tmp $$F; \
-		indent -kr -bl -bli0 -i4 -l78 -nut -nce -sob -sc $$F; \
-		rm $$F~; \
-		splint -weak -strict-lib $$F; \
-	done
+	$(CC) -o $@ $^ $(LDFLAGS)
 
 .PHONY	: clean distclean
 clean	:
 	$(RM) $(OBJ)
 distclean	: clean
 	$(RM) $(BIN)
+
+# extra tasks
+.PHONY	: lint beautify release
+lint	: $(CSRC)
+	splint -weak $^;
+beautify	: $(CSRC)
+	for FILE in $^; do \
+		expand $$FILE | sed 's/[ \t]*$$//' > $$FILE.$$$$ \
+		&& indent -kr -bl -bli0 -i4 -l78 -nut -nce -sob -sc \
+			$$FILE.$$$$ -o $$FILE \
+		&& rm $$FILE.$$$$; \
+	done
+release	:
+	git archive --format=tar --prefix=retinex_pde/ HEAD \
+	        | gzip > ../retinex_pde.tar.gz
+
