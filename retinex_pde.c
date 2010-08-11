@@ -63,8 +63,7 @@ int main(int argc, char *const *argv)
     /* wrong number of parameters : simple help info */
     if (5 != argc)
     {
-        fprintf(stderr, "usage : %s T in.png norm.png rtnx.png\n",
-                argv[0]);
+        fprintf(stderr, "usage : %s T in.png norm.png rtnx.png\n", argv[0]);
         fprintf(stderr, "        T retinex threshold [0...255]\n");
         return EXIT_FAILURE;
     }
@@ -95,9 +94,9 @@ int main(int argc, char *const *argv)
 
     /* the image has either 1 or 3 non-alpha channels */
     if (3 <= nc)
-	nc_non_alpha = 3;
+        nc_non_alpha = 3;
     else
-	nc_non_alpha = 1;
+        nc_non_alpha = 1;
 
     /* normalize data with 3% saturation and save */
     for (channel = 0; channel < nc_non_alpha; channel++)

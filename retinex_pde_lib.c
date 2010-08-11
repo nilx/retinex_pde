@@ -109,7 +109,7 @@ static float *discrete_laplacian_threshold(float *data_out,
             /* row differences */
             if (0 < i)
             {
-                diff = *ptr_in - *ptr_in_xm1; 
+                diff = *ptr_in - *ptr_in_xm1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
