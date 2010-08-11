@@ -144,15 +144,18 @@ static float *discrete_laplacian_threshold(float *data_out,
 /**
  * @brief perform a Poisson PDE in the Fourier DCT space
  *
- * @f$ u(i, j) = F(i, j) * m / (2 cos(i PI / nx)
- *                              + 2 cos(j PI / ny)
- *                              - 4 ) @f$
+ * @f$ u(i, j) = F(i, j) * m / (4 - 2 cos(i PI / nx)
+ *                              - 2 cos(j PI / ny)) @f$
  * if @f$ (i, j) \neq (0, 0) @f$,
  * @f$ u(0, 0) = 0 @f$
  *
  * The trigonometric data is only computed once if the function is
  * called many times with the same nx, ny and m parameters (common for
  * RGB images).
+ *
+ * @warning Because of the static trigonometric data, this function is
+ *          not re-entrant, not thread-safe, and can't be used as is
+ *          in parallel computing.
  *
  * @param data the dct complex coefficients, of size nx x ny
  * @param nx, ny data array size
@@ -250,7 +253,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 
         /*
          * fill the coefs table,
-         * s_coef[i, j] = m / (2 * s_cosi[i] + 2 * s_cosj[j] - 4))
+         * s_coef[i, j] = m / (4 - 2 * s_cosi[i] - 2 * s_cosj[j]))
          * s_coef[0, 0] = 0
          */
         m2 = s_m / 2.;
@@ -269,7 +272,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
                  * by construction, we always have
                  * *ptr_cosi + *ptr_cosj != 2.
                  */
-                *ptr_coef++ = m2 / (*ptr_cosi++ + *ptr_cosj - 2.);
+                *ptr_coef++ = m2 / (2. - *ptr_cosi++ - *ptr_cosj);
             ptr_cosj++;
             ptr_cosi = s_cosi;
         }
@@ -278,7 +281,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
      * end of the conditional trigonometric recomputation
      * we now have an array s_coef of nx x ny coefficients,
      * with
-     * s_coef[i, j] = m / ( 2. cos(i PI / nx) + 2. cos(j PI / ny) - 4. )
+     * s_coef[i, j] = m / ( 4. - 2. cos(i PI / nx) - 2. cos(j PI / ny) )
      * s_coef[0, 0] = 0
      */
 
@@ -310,9 +313,8 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
  *     handled by a simple DCT);
  * @li the DFT data is modified by
  * @f$ \hat{u}(i, j) = \frac{\hat{F}(i, j)}
-                            {2 \cos(\frac{i \pi}{n_x})
- *                           + 2 \cos(\frac{j \pi}{n_y})
- *                           - 4 } @f$;
+ *                           {4 - 2 \cos(\frac{i \pi}{n_x})
+ *                           - 2 \cos(\frac{j \pi}{n_y})} @f$;
  * @li this data is transformed by backward DFT.
  *
  * @param data input/output array
