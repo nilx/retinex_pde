@@ -63,7 +63,7 @@ int main(int argc, char *const *argv)
     /* wrong number of parameters : simple help info */
     if (5 != argc)
     {
-        fprintf(stderr, "usage : %s T in.tiff norm.tiff rtnx.tiff\n",
+        fprintf(stderr, "usage : %s T in.png norm.png rtnx.png\n",
                 argv[0]);
         fprintf(stderr, "        T retinex threshold [0...255]\n");
         return EXIT_FAILURE;
