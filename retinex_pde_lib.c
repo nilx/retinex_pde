@@ -69,6 +69,7 @@
  * @todo openmp?
  * @todo vectorization?
  * @todo try using blas?
+ * @todo split corner/border/center?
  */
 static float *discrete_laplacian_threshold(float *data_out,
                                            const float *data_in,
@@ -108,26 +109,26 @@ static float *discrete_laplacian_threshold(float *data_out,
             /* row differences */
             if (0 < i)
             {
-                diff = *ptr_in_xm1 - *ptr_in;
+                diff = *ptr_in - *ptr_in_xm1; 
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
             if ((int) nx - 1 > i)
             {
-                diff = *ptr_in_xp1 - *ptr_in;
+                diff = *ptr_in - *ptr_in_xp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
             /* column differences */
             if (0 < j)
             {
-                diff = *ptr_in_ym1 - *ptr_in;
+                diff = *ptr_in - *ptr_in_ym1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
             if ((int) ny - 1 > j)
             {
-                diff = *ptr_in_yp1 - *ptr_in;
+                diff = *ptr_in - *ptr_in_yp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
