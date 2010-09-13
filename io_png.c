@@ -14,13 +14,6 @@
  */
 
 /**
- * @mainpage image read/write simplified interface
- *
- * README.txt:
- * @verbinclude README.txt
- */
-
-/**
  * @file io_png.c
  * @brief PNG read/write simplified interface
  *
