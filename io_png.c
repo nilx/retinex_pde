@@ -35,7 +35,6 @@
  * @todo add a test suite
  * @todo internally handle RGB/gray conversion in read_png_raw()
  * @todo handle deinterlacing as a libpng transform function
- * @todo openmp parallel loops
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  */

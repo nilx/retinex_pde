@@ -1,8 +1,14 @@
+
+#ifndef _IO_PNG_H
+#define _IO_PNG_H
+
+#include <stddef.h>
+
+#define IO_PNG_VERSION "0.20100817"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define IO_PNG_VERSION 0.20100803
 
 /* io_png.c */
 unsigned char *read_png_u8(const char *fname, size_t *nx, size_t *ny, size_t *nc);
@@ -17,3 +23,5 @@ int write_png_f32(const char *fname, const float *data, size_t nx, size_t ny, si
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* !_IO_PNG_H */
