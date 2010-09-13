@@ -376,7 +376,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     /* 1. / (float) (nx * ny)) is the DCT normalisation term, see libfftw */
     (void) retinex_poisson_dct(data_fft, nx, ny, 1. / (double) (nx * ny));
 
-    /* create the DFT forward plan and run the iDCT : data_fft -> data */
+    /* create the DFT backward plan and run the iDCT : data_fft -> data */
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_fft, data,
                                FFTW_REDFT01, FFTW_REDFT01,

@@ -45,6 +45,9 @@ Multi-threading is possible, with the FFTW_NTHREADS parameter:
     cc io_png.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c \
         -DFFTW_NTHREADS -lpng -lfftw3f -lfftw3f_threads -o retinex_pde
 
+You can optionally disable the normalization with `make WITHOUT_NORM=1`
+or by adding the `-DWITHOUT_NORM` option to the compiler command.
+
 # USAGE
 
 This program takes 4 parameters: `retinex_pde T in norm rtnx`

@@ -16,10 +16,14 @@ COPT	= -O3 -funroll-loops -fomit-frame-pointer
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror $(COPT)
 LDFLAGS	+= -lpng -lfftw3f
 
+ifdef WITHOUT_NORM
+	CPPFLAGS=-DWITHOUT_NORM
+endif
+
 default: $(BIN)
 
 %.o	: %.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS)
 
 $(BIN)	: $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAGS)

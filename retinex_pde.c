@@ -41,8 +41,11 @@
 #include <string.h>
 
 #include "retinex_pde_lib.h"
-#include "normalize_histo_lib.h"
 #include "io_png.h"
+
+#ifndef WITHOUT_NORM
+#include "normalize_histo_lib.h"
+#endif /* !WITHOUT_NORM */
 
 /**
  * @brief main function call
@@ -76,7 +79,7 @@ int main(int argc, char *const *argv)
         return EXIT_FAILURE;
     }
 
-    /* read the TIFF image into data */
+    /* read the PNG image into data */
     if (NULL == (data = read_png_f32(argv[2], &nx, &ny, &nc)))
     {
         fprintf(stderr, "the image could not be properly read\n");
@@ -99,11 +102,13 @@ int main(int argc, char *const *argv)
         nc_non_alpha = 1;
 
     /* normalize data with 3% saturation and save */
+#ifndef WITHOUT_NORM
     for (channel = 0; channel < nc_non_alpha; channel++)
         (void) normalize_histo_f32(data + channel * nx * ny,
                                    nx * ny, 0., 255.,
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
+#endif /* !WITHOUT_NORM */
     write_png_f32(argv[3], data, nx, ny, nc);
     free(data);
 
@@ -116,10 +121,12 @@ int main(int argc, char *const *argv)
             free(data_rtnx);
             return EXIT_FAILURE;
         }
+#ifndef WITHOUT_NORM
         (void) normalize_histo_f32(data_rtnx + channel * nx * ny,
                                    nx * ny, 0., 255.,
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
+#endif /* !WITHOUT_NORM */
     }
     write_png_f32(argv[4], data_rtnx, nx, ny, nc);
     free(data_rtnx);
