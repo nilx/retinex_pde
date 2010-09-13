@@ -175,8 +175,8 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     /* allocate the cosinus table */
     if (NULL == (cosi = (double *) malloc(sizeof(double) * nx)))
     {
-	fprintf(stderr, "allocation error\n");
-	abort();
+        fprintf(stderr, "allocation error\n");
+        abort();
     }
     /*
      * fill the cosinus table,
@@ -186,13 +186,13 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     ptr_cosi_end = ptr_cosi + nx;
     i = 0;
     while (ptr_cosi < ptr_cosi_end)
-	*ptr_cosi++ = cos((M_PI * i++) / nx);
+        *ptr_cosi++ = cos((M_PI * i++) / nx);
 
     /* allocate the cosinus table */
     if (NULL == (cosj = (double *) malloc(sizeof(double) * ny)))
     {
-	fprintf(stderr, "allocation error\n");
-	abort();
+        fprintf(stderr, "allocation error\n");
+        abort();
     }
     /*
      * fill the cosinus table,
@@ -202,7 +202,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     ptr_cosj_end = ptr_cosj + ny;
     j = 0;
     while (ptr_cosj < ptr_cosj_end)
-	*ptr_cosj++ = cos((M_PI * j++) / ny);
+        *ptr_cosj++ = cos((M_PI * j++) / ny);
 
     /*
      * end of the trigonometric computation
@@ -221,14 +221,14 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     ptr_cosi++;
     while (ptr_cosj < ptr_cosj_end)
     {
-	while (ptr_cosi < ptr_cosi_end)
-	    /*
-	     * by construction, we always have
-	     * *ptr_cosi + *ptr_cosj != 2.
-	     */
-	    *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
-	ptr_cosj++;
-	ptr_cosi = cosi;
+        while (ptr_cosi < ptr_cosi_end)
+            /*
+             * by construction, we always have
+             * *ptr_cosi + *ptr_cosj != 2.
+             */
+            *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
+        ptr_cosj++;
+        ptr_cosi = cosi;
     }
 
     return data;

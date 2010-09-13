@@ -45,7 +45,7 @@
 
 #ifndef WITHOUT_NORM
 #include "normalize_histo_lib.h"
-#endif /* !WITHOUT_NORM */
+#endif                          /* !WITHOUT_NORM */
 
 /**
  * @brief main function call
@@ -108,7 +108,7 @@ int main(int argc, char *const *argv)
                                    nx * ny, 0., 255.,
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
-#endif /* !WITHOUT_NORM */
+#endif                          /* !WITHOUT_NORM */
     write_png_f32(argv[3], data, nx, ny, nc);
     free(data);
 
@@ -126,7 +126,7 @@ int main(int argc, char *const *argv)
                                    nx * ny, 0., 255.,
                                    (size_t) (0.015 * nx * ny),
                                    (size_t) (0.015 * nx * ny));
-#endif /* !WITHOUT_NORM */
+#endif                          /* !WITHOUT_NORM */
     }
     write_png_f32(argv[4], data_rtnx, nx, ny, nc);
     free(data_rtnx);
