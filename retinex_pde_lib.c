@@ -150,13 +150,10 @@ static float *discrete_laplacian_threshold(float *data_out,
  * if @f$ (i, j) \neq (0, 0) @f$,
  * @f$ u(0, 0) = 0 @f$
  *
- * The trigonometric data is only computed once if the function is
- * called many times with the same nx, ny and m parameters (common for
- * RGB images).
- *
- * @warning Because of the static trigonometric data, this function is
- *          not re-entrant, not thread-safe, and can't be used as is
- *          in parallel computing.
+ * When this function is successively used on arrays of identical
+ * size, the trigonometric computation is redundant and could be kept
+ * in memory for a faster code. However, in our use case, the speedup
+ * is marginal and we prefer to recompute this data for a simple code.
  *
  * @param data the dct complex coefficients, of size nx x ny
  * @param nx, ny data array size
@@ -164,134 +161,75 @@ static float *discrete_laplacian_threshold(float *data_out,
  *
  * @return the data array, updated
  *
- * @todo handle nx=ny
+ * @todo vectorization?
+ * @todo openmp?
  */
 static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 {
-    float *ptr_data, *ptr_end;
-    double *ptr_coef;
-    /* static data, kept for a potential re-use */
-    /*
-     * we typically perform this fonction on 3 RGB planes, and want to
-     * keep the trigonometric data because its computation is expensive
-     */
-    static double *s_coef = NULL;
-    static double *s_cosi = NULL, *s_cosj = NULL;
-    static float s_m = 0.;
-    static size_t s_nx = 0, s_ny = 0;
+    float *ptr_data;
+    double *cosi = NULL, *cosj = NULL;
+    double *ptr_cosi, *ptr_cosi_end, *ptr_cosj, *ptr_cosj_end;
+    int i, j;
+    double m2;
 
-    /*
-     * the trigonometric computation is expensive
-     * this code block only recompute the coefs if needed, ie if nx,
-     * ny and m are not the same as the previous call
-     * once computed, the data is kept in static variables until the
-     * next call, because multiple calls with the same parameters are
-     * common with RGB images
-     */
-    /*
-     * fabs(m - s_m) is a trick to avoid float comparison,
-     * with negligible cost
-     */
-    if (nx != s_nx || ny != s_ny || 0. < fabs(m - s_m))
+    /* allocate the cosinus table */
+    if (NULL == (cosi = (double *) malloc(sizeof(double) * nx)))
     {
-        int i, j;
-        double m2;
-        double *ptr_cosi, *ptr_cosi_end, *ptr_cosj, *ptr_cosj_end;
-
-        if (s_nx != nx)
-        {
-            /* (re) allocate the cosinus table */
-            if (NULL != s_cosi)
-                free(s_cosi);
-            if (NULL == (s_cosi = (double *) malloc(sizeof(double) * nx)))
-            {
-                fprintf(stderr, "allocation error\n");
-                abort();
-            }
-            /*
-             * fill the cosinus table,
-             * s_cosi[i] = cos(i Pi / nx) for i in [0..nx[
-             */
-            ptr_cosi = s_cosi;
-            ptr_cosi_end = ptr_cosi + nx;
-            i = 0;
-            while (ptr_cosi < ptr_cosi_end)
-                *ptr_cosi++ = cos((M_PI * i++) / nx);
-        }
-        s_nx = nx;
-
-        if (s_ny != ny)
-        {
-            /* (re) allocate the cosinus table */
-            if (NULL != s_cosj)
-                free(s_cosj);
-            if (NULL == (s_cosj = (double *) malloc(sizeof(double) * ny)))
-            {
-                fprintf(stderr, "allocation error\n");
-                abort();
-            }
-            /*
-             * fill the cosinus table,
-             * s_cosj[j] = cos(j Pi / nx) for j in [0..ny[
-             */
-            ptr_cosj = s_cosj;
-            ptr_cosj_end = ptr_cosj + ny;
-            j = 0;
-            while (ptr_cosj < ptr_cosj_end)
-                *ptr_cosj++ = cos((M_PI * j++) / ny);
-        }
-        s_ny = ny;
-
-        /* (re) allocate the coefs table */
-        if (NULL != s_coef)
-            free(s_coef);
-        if (NULL == (s_coef = (double *) malloc(sizeof(double) * nx * ny)))
-        {
-            fprintf(stderr, "allocation error\n");
-            abort();
-        }
-        s_m = m;
-
-        /*
-         * fill the coefs table,
-         * s_coef[i, j] = m / (4 - 2 * s_cosi[i] - 2 * s_cosj[j]))
-         * s_coef[0, 0] = 0
-         */
-        m2 = s_m / 2.;
-        ptr_coef = s_coef;
-        ptr_cosi = s_cosi;
-        ptr_cosj = s_cosj;
-        ptr_cosi_end = s_cosi + s_nx;
-        ptr_cosj_end = s_cosj + s_ny;
-        /* handle the first value, s_coef[0, 0] = 0 */
-        *ptr_coef++ = 0.;
-        ptr_cosi++;
-        while (ptr_cosj < ptr_cosj_end)
-        {
-            while (ptr_cosi < ptr_cosi_end)
-                /*
-                 * by construction, we always have
-                 * *ptr_cosi + *ptr_cosj != 2.
-                 */
-                *ptr_coef++ = m2 / (2. - *ptr_cosi++ - *ptr_cosj);
-            ptr_cosj++;
-            ptr_cosi = s_cosi;
-        }
+	fprintf(stderr, "allocation error\n");
+	abort();
     }
     /*
-     * end of the conditional trigonometric recomputation
-     * we now have an array s_coef of nx x ny coefficients,
-     * with
-     * s_coef[i, j] = m / ( 4. - 2. cos(i PI / nx) - 2. cos(j PI / ny) )
-     * s_coef[0, 0] = 0
+     * fill the cosinus table,
+     * cosi[i] = cos(i Pi / nx) for i in [0..nx[
      */
+    ptr_cosi = cosi;
+    ptr_cosi_end = ptr_cosi + nx;
+    i = 0;
+    while (ptr_cosi < ptr_cosi_end)
+	*ptr_cosi++ = cos((M_PI * i++) / nx);
 
-    /* multiply the dct coefficients */
+    /* allocate the cosinus table */
+    if (NULL == (cosj = (double *) malloc(sizeof(double) * ny)))
+    {
+	fprintf(stderr, "allocation error\n");
+	abort();
+    }
+    /*
+     * fill the cosinus table,
+     * cosj[j] = cos(j Pi / ny) for j in [0..ny[
+     */
+    ptr_cosj = cosj;
+    ptr_cosj_end = ptr_cosj + ny;
+    j = 0;
+    while (ptr_cosj < ptr_cosj_end)
+	*ptr_cosj++ = cos((M_PI * j++) / ny);
+
+    /*
+     * end of the trigonometric computation
+     * we will now multiply data[i, j] by
+     * m / (4 - 2 * s_cosi[i] - 2 * s_cosj[j]))
+     * and set data[i, j] to 0
+     */
+    m2 = m / 2.;
     ptr_data = data;
-    ptr_end = ptr_data + nx * ny;
-    ptr_coef = s_coef;
-    while (ptr_data < ptr_end)
-        *ptr_data++ *= *ptr_coef++;
+    ptr_cosi = cosi;
+    ptr_cosi_end = cosi + nx;
+    ptr_cosj = cosj;
+    ptr_cosj_end = cosj + ny;
+    /* handle the first value, data[0, 0] = 0 */
+    *ptr_data++ = 0.;
+    ptr_cosi++;
+    while (ptr_cosj < ptr_cosj_end)
+    {
+	while (ptr_cosi < ptr_cosi_end)
+	    /*
+	     * by construction, we always have
+	     * *ptr_cosi + *ptr_cosj != 2.
+	     */
+	    *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
+	ptr_cosj++;
+	ptr_cosi = cosi;
+    }
 
     return data;
 }
