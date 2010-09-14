@@ -153,7 +153,8 @@ static float *discrete_laplacian_threshold(float *data_out,
  * When this function is successively used on arrays of identical
  * size, the trigonometric computation is redundant and could be kept
  * in memory for a faster code. However, in our use case, the speedup
- * is marginal and we prefer to recompute this data for a simple code.
+ * is marginal and we prefer to recompute this data and keep the code
+ * simple.
  *
  * @param data the dct complex coefficients, of size nx x ny
  * @param nx, ny data array size
@@ -231,6 +232,8 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
         ptr_cosi = cosi;
     }
 
+    free(cosi);
+    free(cosj);
     return data;
 }
 
