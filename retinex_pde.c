@@ -98,6 +98,7 @@ int main(int argc, char *const *argv)
         if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t)) {
             fprintf(stderr, "the retinex PDE failed\n");
             free(data_rtnx);
+	    free(data);
             return EXIT_FAILURE;
         }
         normalize_mean_dt(data_rtnx + channel * nx * ny,
@@ -105,6 +106,7 @@ int main(int argc, char *const *argv)
     }
     write_png_f32(argv[3], data_rtnx, nx, ny, nc);
     free(data_rtnx);
+    free(data);
 
     return EXIT_SUCCESS;
 }
