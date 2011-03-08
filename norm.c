@@ -27,6 +27,8 @@
 #include <string.h>
 #include <math.h>
 
+#include "norm.h"
+
 /**
  * @brief compute mean and variance of a float array
  *
@@ -73,8 +75,8 @@ static void mean_dt(const float *data, size_t size,
  */
 void normalize_mean_dt(float *data, const float *ref, size_t size)
 {
-    double mean_ref, mean_data, dt_ref, dt_data;        /* means and variances */
-    double a, b;                /* normalization coefficients */
+    double mean_ref, mean_data, dt_ref, dt_data;  
+    double a, b;
     size_t i;
     float *ptr_data;
 
