@@ -28,6 +28,39 @@
 #include <math.h>
 
 /**
+ * @brief compute mean and variance of a float array
+ *
+ * @param data float array
+ * @param size array size
+ * @param mean_p, dt_p addresses to store the mean and variance
+ */
+static void mean_dt(const float *data, size_t size,
+                    double *mean_p, double *dt_p)
+{
+    double mean, dt;
+    float *ptr_data;
+    size_t i;
+
+    mean = 0.;
+    dt = 0.;
+    ptr_data = data;
+    for (i = 0; i < size; i++) {
+        mean += *ptr_data;
+        dt += (*ptr_data) * (*ptr_data);
+        ptr_data++;
+    }
+    mean /= (double) size;
+    dt /= (double) size;
+    dt -= (mean * mean);
+    dt = sqrt(dt);
+
+    *mean_p = mean;
+    *dt_p = dt;
+
+    return;
+}
+
+/**
  * @brief normalize mean and variance of a float array given a reference
  *        array
  *
@@ -38,12 +71,12 @@
  * @param ref reference array
  * @param size size of the arrays
  */
-void norm_dt(float *data, float *ref, size_t size)
+void norm_dt(float *data, const float *ref, size_t size)
 {
-    double m_ref, m_data, dt_ref, dt_data; /* means and variances */
-    double a, b; /* normalization coefficients */
+    double mean_ref, mean_data, dt_ref, dt_data;        /* means and variances */
+    double a, b;                /* normalization coefficients */
     size_t i;
-    float *ptr_ref, *ptr_data;
+    float *ptr_data;
 
     /* sanity check */
     if (NULL == data || NULL == ref) {
@@ -51,42 +84,20 @@ void norm_dt(float *data, float *ref, size_t size)
         abort();
     }
 
-    /* compute reference mean and variance */
-    m_ref = 0.;
-    dt_ref = 0.;
-    ptr_ref = ref;
-    for (i=0; i< size; i++) {
-        m_ref += *ptr_ref;
-        dt_ref += (*ptr_ref) * (*ptr_ref);
-        ptr_ref++;
-    }
-    m_ref /= (double) size;
-    dt_ref /= (double) size;
-    dt_ref -= (m_ref * m_ref);
-    dt_ref = sqrt(dt_ref);
+    /* compute mean and variance of the two arrays */
+    mean_dt(ref, size, &mean_ref, &dt_ref);
+    mean_dt(data, size, &mean_data, &dt_data);
 
-    /* compute pre-normalization mean and variance */
-    m_data = 0.;
-    dt_data = 0.;
-    ptr_data = data;
-    for (i=0; i<size; i++) {
-        m_data += *ptr_data;
-        dt_data += (*ptr_data) * (*ptr_data);
-        ptr_data++;
-    }
-    m_data /= (double) size;
-    dt_data /= (double) size;
-    dt_data -= (m_data * m_data);
-    dt_data = sqrt(dt_data);
-
-    /* compute normalization coefficients */
+    /* compute the normalization coefficients */
     a = dt_ref / dt_data;
-    b = m_ref - a * m_data;
+    b = mean_ref - a * mean_data;
 
     /* normalize the array */
     ptr_data = data;
-    for (i=0; i<size; i++) {
+    for (i = 0; i < size; i++) {
         *ptr_data = a * *ptr_data + b;
         ptr_data++;
     }
+
+    return;
 }
