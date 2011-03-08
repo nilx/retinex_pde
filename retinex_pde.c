@@ -98,7 +98,6 @@ int main(int argc, char *const *argv)
     else
         nc_non_alpha = 1;
 
-
     /* run retinex on data_rtnx, normalize mean and standard deviation and save */
     for (channel = 0; channel < nc_non_alpha; channel++)
     {
@@ -108,7 +107,8 @@ int main(int argc, char *const *argv)
             free(data_rtnx);
             return EXIT_FAILURE;
         }
-	norm_dt(data_rtnx + channel * nx * ny, data + channel * nx * ny, nx*ny);
+        norm_dt(data_rtnx + channel * nx * ny, data + channel * nx * ny,
+                nx * ny);
     }
     write_png_f32(argv[3], data_rtnx, nx, ny, nc);
     free(data_rtnx);
