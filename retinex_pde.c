@@ -26,11 +26,9 @@
  * @file retinex_pde.c
  * @brief command-line interface
  *
- * The input image processed by the retinex transform, then normalized
- * to have the same mean and variance as the input image
- *
- * For comparison, the same input is also normalized by the same
- * normalization process, without retinex transform.
+ * The input image is processed by the retinex transform,
+ * then normalized to have the same mean and variance as the input
+ * image.
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  */
@@ -41,7 +39,6 @@
 
 #include "retinex_pde_lib.h"
 #include "io_png.h"
-
 #include "norm_mean_dt.h"
 
 /**
@@ -50,7 +47,7 @@
 int main(int argc, char *const *argv)
 {
     float t;                    /* retinex threshold */
-    size_t nx, ny, nc;
+    size_t nx, ny, nc;          /* image size */
     size_t channel, nc_non_alpha;
     float *data, *data_rtnx;
 
@@ -93,15 +90,18 @@ int main(int argc, char *const *argv)
     else
         nc_non_alpha = 1;
 
-    /* run retinex on data_rtnx, normalize mean and standard deviation and save */
+    /*
+     * run retinex on each non-alpha channel data_rtnx,
+     * normalize mean and standard deviation and save
+     */
     for (channel = 0; channel < nc_non_alpha; channel++) {
         if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t)) {
             fprintf(stderr, "the retinex PDE failed\n");
             free(data_rtnx);
             return EXIT_FAILURE;
         }
-        norm_dt(data_rtnx + channel * nx * ny, data + channel * nx * ny,
-                nx * ny);
+        norm_dt(data_rtnx + channel * nx * ny,
+                data + channel * nx * ny, nx * ny);
     }
     write_png_f32(argv[3], data_rtnx, nx, ny, nc);
     free(data_rtnx);
