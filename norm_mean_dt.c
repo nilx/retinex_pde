@@ -16,8 +16,8 @@
  */
 
 /**
- * @file norm_brief_dt.c
- * @brief image normalisation
+ * @file norm_mean_dt.c
+ * @brief array normalization
  *
  * @author Jose-Luis Lisani <joseluis.lisani@uib.es>
  */
@@ -28,62 +28,65 @@
 #include <math.h>
 
 /**
- * @brief normalize mean and variance of an image given a reference
- *        image
+ * @brief normalize mean and variance of a float array given a reference
+ *        array
  *
- * @param out input/output data
- * @param in reference image
- * @param size size of the input/output
+ * The normalized array is normalized by an affine transformation
+ * to adjust its mean and variance to a reference array.
+ *
+ * @param data normalized array
+ * @param ref reference array
+ * @param size size of the arrays
  */
-void norm_dt(float *out, float *in, size_t size)
+void norm_dt(float *data, float *ref, size_t size)
 {
-    double m_in, m_out, dt_in, dt_out; /* means and variances */
+    double m_ref, m_data, dt_ref, dt_data; /* means and variances */
     double a, b; /* normalization coefficients */
     size_t i;
-    float *ptr_in, *ptr_out;
+    float *ptr_ref, *ptr_data;
 
     /* sanity check */
-    if (NULL == out || NULL == in) {
+    if (NULL == data || NULL == ref) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
         abort();
     }
 
-    /* compute input mean and variance */
-    m_in = 0.;
-    dt_in = 0.;
-    ptr_in = in;
+    /* compute reference mean and variance */
+    m_ref = 0.;
+    dt_ref = 0.;
+    ptr_ref = ref;
     for (i=0; i< size; i++) {
-        m_in += *ptr_in;
-        dt_in += (*ptr_in) * (*ptr_in);
-        ptr_in++;
+        m_ref += *ptr_ref;
+        dt_ref += (*ptr_ref) * (*ptr_ref);
+        ptr_ref++;
     }
-    m_in /= (double) size;
-    dt_in /= (double) size;
-    dt_in -= (m_in * m_in);
-    dt_in = sqrt(dt_in);
+    m_ref /= (double) size;
+    dt_ref /= (double) size;
+    dt_ref -= (m_ref * m_ref);
+    dt_ref = sqrt(dt_ref);
 
-    /* compute pre-normalization output mean and variance */
-    m_out = 0.;
-    dt_out = 0.;
-    ptr_out = out;
+    /* compute pre-normalization mean and variance */
+    m_data = 0.;
+    dt_data = 0.;
+    ptr_data = data;
     for (i=0; i<size; i++) {
-        m_out += *ptr_out;
-        dt_out += (*ptr_out) * (*ptr_out);
-        ptr_out++;
+        m_data += *ptr_data;
+        dt_data += (*ptr_data) * (*ptr_data);
+        ptr_data++;
     }
-    m_out /= (double) size;
-    dt_out /= (double) size;
-    dt_out -= (m_out * m_out);
-    dt_out = sqrt(dt_out);
+    m_data /= (double) size;
+    dt_data /= (double) size;
+    dt_data -= (m_data * m_data);
+    dt_data = sqrt(dt_data);
 
     /* compute normalization coefficients */
-    a = dt_in / dt_out;
-    b = m_in - a * m_out;
+    a = dt_ref / dt_data;
+    b = m_ref - a * m_data;
 
-    /* normalize the output image */
-    ptr_out = out;
+    /* normalize the array */
+    ptr_data = data;
     for (i=0; i<size; i++) {
-        *ptr_out = a * *ptr_out + b;
-        ptr_out++;
+        *ptr_data = a * *ptr_data + b;
+        ptr_data++;
     }
 }
