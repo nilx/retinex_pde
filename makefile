@@ -41,7 +41,7 @@ lint	: $(CSRC)
 beautify	: $(CSRC)
 	for FILE in $^; do \
 		expand $$FILE | sed 's/[ \t]*$$//' > $$FILE.$$$$ \
-		&& indent -kr -bl -bli0 -i4 -l78 -nut -nce -sob -sc \
+		&& indent -kr -i4 -l78 -nut -nce -sob -sc \
 			$$FILE.$$$$ -o $$FILE \
 		&& rm $$FILE.$$$$; \
 	done

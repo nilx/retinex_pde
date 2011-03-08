@@ -41,8 +41,7 @@ void norm_dt(float *out, float *in, size_t size)
     float *ptr_in, *ptr_out, *ptr_end;
 
     /* sanity check */
-    if (NULL == out || NULL == in)
-    {
+    if (NULL == out || NULL == in) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
         abort();
     }
@@ -51,8 +50,7 @@ void norm_dt(float *out, float *in, size_t size)
     dt_in = 0.;
     ptr_in = in;
     ptr_end = in + size;
-    while (ptr_in < ptr_end)
-    {
+    while (ptr_in < ptr_end) {
         m_in += *ptr_in;
         dt_in += (*ptr_in) * (*ptr_in);
         ptr_in++;
@@ -66,8 +64,7 @@ void norm_dt(float *out, float *in, size_t size)
     dt_out = 0.;
     ptr_out = out;
     ptr_end = out + size;
-    while (ptr_out < ptr_end)
-    {
+    while (ptr_out < ptr_end) {
         m_out += *ptr_out;
         dt_out += (*ptr_out) * (*ptr_out);
         ptr_out++;
@@ -81,8 +78,7 @@ void norm_dt(float *out, float *in, size_t size)
     b = m_in - a * m_out;
     ptr_out = out;
     ptr_end = out + size;
-    while (ptr_out < ptr_end)
-    {
+    while (ptr_out < ptr_end) {
         x = *ptr_out;
         *ptr_out = a * x + b;
         ptr_out++;

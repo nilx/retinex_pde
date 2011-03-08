@@ -82,8 +82,7 @@ static float *discrete_laplacian_threshold(float *data_out,
     const float *ptr_in, *ptr_in_xm1, *ptr_in_xp1, *ptr_in_ym1, *ptr_in_yp1;
 
     /* sanity check */
-    if (NULL == data_in || NULL == data_out)
-    {
+    if (NULL == data_in || NULL == data_out) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
         abort();
     }
@@ -103,31 +102,26 @@ static float *discrete_laplacian_threshold(float *data_out,
     ptr_out = data_out;
     /* iterate on j, i, following the array order */
     for (j = 0; j < (int) ny; j++)
-        for (i = 0; i < (int) nx; i++)
-        {
+        for (i = 0; i < (int) nx; i++) {
             *ptr_out = 0.;
             /* row differences */
-            if (0 < i)
-            {
+            if (0 < i) {
                 diff = *ptr_in - *ptr_in_xm1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
-            if ((int) nx - 1 > i)
-            {
+            if ((int) nx - 1 > i) {
                 diff = *ptr_in - *ptr_in_xp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
             /* column differences */
-            if (0 < j)
-            {
+            if (0 < j) {
                 diff = *ptr_in - *ptr_in_ym1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
-            if ((int) ny - 1 > j)
-            {
+            if ((int) ny - 1 > j) {
                 diff = *ptr_in - *ptr_in_yp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
@@ -174,8 +168,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     double m2;
 
     /* allocate the cosinus table */
-    if (NULL == (cosi = (double *) malloc(sizeof(double) * nx)))
-    {
+    if (NULL == (cosi = (double *) malloc(sizeof(double) * nx))) {
         fprintf(stderr, "allocation error\n");
         abort();
     }
@@ -190,8 +183,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
         *ptr_cosi++ = cos((M_PI * i++) / nx);
 
     /* allocate the cosinus table */
-    if (NULL == (cosj = (double *) malloc(sizeof(double) * ny)))
-    {
+    if (NULL == (cosj = (double *) malloc(sizeof(double) * ny))) {
         fprintf(stderr, "allocation error\n");
         abort();
     }
@@ -220,8 +212,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     /* handle the first value, data[0, 0] = 0 */
     *ptr_data++ = 0.;
     ptr_cosi++;
-    while (ptr_cosj < ptr_cosj_end)
-    {
+    while (ptr_cosj < ptr_cosj_end) {
         while (ptr_cosi < ptr_cosi_end)
             /*
              * by construction, we always have
@@ -275,16 +266,14 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
      */
 
     /* check allocaton */
-    if (NULL == data)
-    {
+    if (NULL == data) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
         abort();
     }
 
     /* start threaded fftw if FFTW_NTHREADS is defined */
 #ifdef FFTW_NTHREADS
-    if (0 == fftwf_init_threads())
-    {
+    if (0 == fftwf_init_threads()) {
         fprintf(stderr, "fftw initialisation error\n");
         abort();
     }
@@ -293,8 +282,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 
     /* allocate the float-complex FFT array and the float tmp array */
     if (NULL == (data_fft = (float *) malloc(sizeof(float) * nx * ny))
-        || NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny)))
-    {
+        || NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny))) {
         fprintf(stderr, "allocation error\n");
         abort();
     }

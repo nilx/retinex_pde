@@ -55,14 +55,12 @@ int main(int argc, char *const *argv)
     float *data, *data_rtnx;
 
     /* "-v" option : version info */
-    if (2 <= argc && 0 == strcmp("-v", argv[1]))
-    {
+    if (2 <= argc && 0 == strcmp("-v", argv[1])) {
         fprintf(stdout, "%s version " __DATE__ "\n", argv[0]);
         return EXIT_SUCCESS;
     }
     /* wrong number of parameters : simple help info */
-    if (4 != argc)
-    {
+    if (4 != argc) {
         fprintf(stderr, "usage : %s T in.png rtnx.png\n", argv[0]);
         fprintf(stderr, "        T retinex threshold [0...255]\n");
         return EXIT_FAILURE;
@@ -70,22 +68,19 @@ int main(int argc, char *const *argv)
 
     /* retinex threshold */
     t = atof(argv[1]);
-    if (0. > t || 255. < t)
-    {
+    if (0. > t || 255. < t) {
         fprintf(stderr, "the retinex threshold must be in [0..255]\n");
         return EXIT_FAILURE;
     }
 
     /* read the PNG image into data */
-    if (NULL == (data = read_png_f32(argv[2], &nx, &ny, &nc)))
-    {
+    if (NULL == (data = read_png_f32(argv[2], &nx, &ny, &nc))) {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
 
     /* allocate data_rtnx and fill it with a copy of data */
-    if (NULL == (data_rtnx = (float *) malloc(nc * nx * ny * sizeof(float))))
-    {
+    if (NULL == (data_rtnx = (float *) malloc(nc * nx * ny * sizeof(float)))) {
         fprintf(stderr, "allocation error\n");
         free(data);
         return EXIT_FAILURE;
@@ -99,10 +94,8 @@ int main(int argc, char *const *argv)
         nc_non_alpha = 1;
 
     /* run retinex on data_rtnx, normalize mean and standard deviation and save */
-    for (channel = 0; channel < nc_non_alpha; channel++)
-    {
-        if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t))
-        {
+    for (channel = 0; channel < nc_non_alpha; channel++) {
+        if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t)) {
             fprintf(stderr, "the retinex PDE failed\n");
             free(data_rtnx);
             return EXIT_FAILURE;
