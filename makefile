@@ -1,4 +1,4 @@
-# Copyright 2009, 2010 IPOL Image Processing On Line http://www.ipol.im/
+# Copyright 2009-2011 IPOL Image Processing On Line http://www.ipol.im/
 # Author: Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
 #
 # Copying and distribution of this file, with or without

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009, 2010 IPOL Image Processing On Line http://www.ipol.im/
+ * Copyright 2009-2011 IPOL Image Processing On Line http://www.ipol.im/
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
