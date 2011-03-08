@@ -66,16 +66,13 @@
  *
  * @return data_out
  *
- * @todo openmp?
- * @todo vectorization?
- * @todo try using blas?
- * @todo split corner/border/center?
+ * @todo split corner/border/inner
  */
 static float *discrete_laplacian_threshold(float *data_out,
                                            const float *data_in,
                                            size_t nx, size_t ny, float t)
 {
-    int i, j;
+    size_t i, j;
     float *ptr_out;
     float diff;
     /* pointers to the current and neighbour values */
@@ -101,8 +98,8 @@ static float *discrete_laplacian_threshold(float *data_out,
     ptr_in_yp1 = data_in + nx;
     ptr_out = data_out;
     /* iterate on j, i, following the array order */
-    for (j = 0; j < (int) ny; j++)
-        for (i = 0; i < (int) nx; i++) {
+    for (j = 0; j < ny; j++) {
+        for (i = 0; i < nx; i++) {
             *ptr_out = 0.;
             /* row differences */
             if (0 < i) {
@@ -110,7 +107,7 @@ static float *discrete_laplacian_threshold(float *data_out,
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
-            if ((int) nx - 1 > i) {
+            if (nx - 1 > i) {
                 diff = *ptr_in - *ptr_in_xp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
@@ -121,7 +118,7 @@ static float *discrete_laplacian_threshold(float *data_out,
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
-            if ((int) ny - 1 > j) {
+            if ( ny - 1 > j) {
                 diff = *ptr_in - *ptr_in_yp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
@@ -133,7 +130,41 @@ static float *discrete_laplacian_threshold(float *data_out,
             ptr_in_yp1++;
             ptr_out++;
         }
+    }
+
     return data_out;
+}
+
+/**
+ * @brief compute a cosinus table
+ *
+ * Allocate and fill a table of n values cos(i Pi / n) for i in [0..n[.
+ *
+ * @param size the table size
+ *
+ * @return the table, allocated and filled
+ */
+static double *cos_table(size_t size)
+{
+    double *table = NULL;
+    double *ptr_table;
+    size_t i;
+
+    /* allocate the cosinus table */
+    if (NULL == (table = (double *) malloc(sizeof(double) * size))) {
+        fprintf(stderr, "allocation error\n");
+        abort();
+    }
+
+    /*
+     * fill the cosinus table,
+     * table[i] = cos(i Pi / n) for i in [0..n[
+     */
+    ptr_table = table;
+    for (i = 0; i < size; i++)
+        *ptr_table++ = cos((M_PI * i) / size);
+
+    return table;
 }
 
 /**
@@ -155,69 +186,47 @@ static float *discrete_laplacian_threshold(float *data_out,
  * @param m global multiplication parameter (DCT normalization)
  *
  * @return the data array, updated
- *
- * @todo vectorization?
- * @todo openmp?
  */
 static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 {
     float *ptr_data;
     double *cosi = NULL, *cosj = NULL;
-    double *ptr_cosi, *ptr_cosi_end, *ptr_cosj, *ptr_cosj_end;
-    int i, j;
+    double *ptr_cosi, *ptr_cosj;
+    size_t i, j;
     double m2;
 
-    /* allocate the cosinus table */
-    if (NULL == (cosi = (double *) malloc(sizeof(double) * nx))) {
-        fprintf(stderr, "allocation error\n");
-        abort();
-    }
     /*
-     * fill the cosinus table,
+     * get the cosinus tables
      * cosi[i] = cos(i Pi / nx) for i in [0..nx[
-     */
-    ptr_cosi = cosi;
-    ptr_cosi_end = ptr_cosi + nx;
-    i = 0;
-    while (ptr_cosi < ptr_cosi_end)
-        *ptr_cosi++ = cos((M_PI * i++) / nx);
-
-    /* allocate the cosinus table */
-    if (NULL == (cosj = (double *) malloc(sizeof(double) * ny))) {
-        fprintf(stderr, "allocation error\n");
-        abort();
-    }
-    /*
-     * fill the cosinus table,
      * cosj[j] = cos(j Pi / ny) for j in [0..ny[
      */
-    ptr_cosj = cosj;
-    ptr_cosj_end = ptr_cosj + ny;
-    j = 0;
-    while (ptr_cosj < ptr_cosj_end)
-        *ptr_cosj++ = cos((M_PI * j++) / ny);
+    cosi = cos_table(nx);
+    cosj = cos_table(ny);
 
     /*
-     * end of the trigonometric computation
      * we will now multiply data[i, j] by
-     * m / (4 - 2 * s_cosi[i] - 2 * s_cosj[j]))
+     * m / (4 - 2 * cosi[i] - 2 * cosj[j]))
      * and set data[i, j] to 0
      */
     m2 = m / 2.;
     ptr_data = data;
     ptr_cosi = cosi;
-    ptr_cosi_end = cosi + nx;
     ptr_cosj = cosj;
-    ptr_cosj_end = cosj + ny;
-    /* handle the first value, data[0, 0] = 0 */
+    /*
+     * handle the first value, data[0, 0] = 0
+     * after that, by construction, we always have
+     * *ptr_cosi + *ptr_cosj != 2.
+     */
     *ptr_data++ = 0.;
     ptr_cosi++;
-    while (ptr_cosj < ptr_cosj_end) {
-        while (ptr_cosi < ptr_cosi_end)
-            /*
-             * by construction, we always have
-             * *ptr_cosi + *ptr_cosj != 2.
-             */
+    /* continue with the first line from the second value */
+    for (i = 1; i < nx; i++)
+	*ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
+    ptr_cosj++;
+    ptr_cosi = cosi;
+    /* continue with the other lines */
+    for (j = 1; j < ny; j++) {
+        for (i = 0; i < nx; i++)
             *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
         ptr_cosj++;
         ptr_cosi = cosi;
