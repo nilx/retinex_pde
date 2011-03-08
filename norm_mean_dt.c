@@ -37,8 +37,10 @@
  */
 void norm_dt(float *out, float *in, size_t size)
 {
-    float m_out, dt_out, a, b, m_in, dt_in, x;
-    float *ptr_in, *ptr_out, *ptr_end;
+    double m_in, m_out, dt_in, dt_out; /* means and variances */
+    double a, b; /* normalization coefficients */
+    size_t i;
+    float *ptr_in, *ptr_out;
 
     /* sanity check */
     if (NULL == out || NULL == in) {
@@ -46,42 +48,42 @@ void norm_dt(float *out, float *in, size_t size)
         abort();
     }
 
+    /* compute input mean and variance */
     m_in = 0.;
     dt_in = 0.;
     ptr_in = in;
-    ptr_end = in + size;
-    while (ptr_in < ptr_end) {
+    for (i=0; i< size; i++) {
         m_in += *ptr_in;
         dt_in += (*ptr_in) * (*ptr_in);
         ptr_in++;
     }
-    m_in /= (float) size;
-    dt_in /= (float) size;
+    m_in /= (double) size;
+    dt_in /= (double) size;
     dt_in -= (m_in * m_in);
     dt_in = sqrt(dt_in);
 
+    /* compute pre-normalization output mean and variance */
     m_out = 0.;
     dt_out = 0.;
     ptr_out = out;
-    ptr_end = out + size;
-    while (ptr_out < ptr_end) {
+    for (i=0; i<size; i++) {
         m_out += *ptr_out;
         dt_out += (*ptr_out) * (*ptr_out);
         ptr_out++;
     }
-    m_out /= (float) size;
-    dt_out /= (float) size;
+    m_out /= (double) size;
+    dt_out /= (double) size;
     dt_out -= (m_out * m_out);
     dt_out = sqrt(dt_out);
 
+    /* compute normalization coefficients */
     a = dt_in / dt_out;
     b = m_in - a * m_out;
+
+    /* normalize the output image */
     ptr_out = out;
-    ptr_end = out + size;
-    while (ptr_out < ptr_end) {
-        x = *ptr_out;
-        *ptr_out = a * x + b;
+    for (i=0; i<size; i++) {
+        *ptr_out = a * *ptr_out + b;
         ptr_out++;
     }
-
 }
