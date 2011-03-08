@@ -40,7 +40,7 @@ Alternatively, you can manually compile
 
 Multi-threading is possible, with the FFTW_NTHREADS parameter:
     cc io_png.c norm.c retinex_pde_lib.c retinex_pde.c \
-        -DFFTW_NTHREADS -lpng -lfftw3f -lfftw3f_threads -o retinex_pde
+        -DFFTW_NTHREADS=4 -lpng -lfftw3f -lfftw3f_threads -o retinex_pde
 
 # USAGE
 

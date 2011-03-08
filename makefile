@@ -17,6 +17,10 @@ COPT	= -O3 -funroll-loops -fomit-frame-pointer \
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror $(COPT)
 LDFLAGS	+= -lpng -lfftw3f
 
+# uncomment this part to use the multi-threaded DCT
+#CPPFLAGS	= -DFFTW_NTHREADS=8
+#LDFLAGS	+= -lfftw3f_threads -lpthread
+
 default: $(BIN)
 
 %.o	: %.c
