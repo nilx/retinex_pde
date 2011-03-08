@@ -39,7 +39,7 @@
 
 #include "retinex_pde_lib.h"
 #include "io_png.h"
-#include "norm_mean_dt.h"
+#include "norm.h"
 
 /**
  * @brief main function call
@@ -100,8 +100,8 @@ int main(int argc, char *const *argv)
             free(data_rtnx);
             return EXIT_FAILURE;
         }
-        norm_dt(data_rtnx + channel * nx * ny,
-                data + channel * nx * ny, nx * ny);
+        normalize_mean_dt(data_rtnx + channel * nx * ny,
+                          data + channel * nx * ny, nx * ny);
     }
     write_png_f32(argv[3], data_rtnx, nx, ny, nc);
     free(data_rtnx);

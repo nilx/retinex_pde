@@ -6,13 +6,14 @@
 # the copyright notice and this notice are preserved.  This file is
 # offered as-is, without any warranty.
 
-CSRC	= io_png.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c norm_mean_dt.c
+CSRC	= io_png.c norm.c retinex_pde_lib.c retinex_pde.c
 
 SRC	= $(CSRC)
 OBJ	= $(CSRC:.c=.o)
 BIN	= retinex_pde
 
-COPT	= -O3 -funroll-loops -fomit-frame-pointer
+COPT	= -O3 -funroll-loops -fomit-frame-pointer \
+	-ffast-math -march=native -mtune=native
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror $(COPT)
 LDFLAGS	+= -lpng -lfftw3f
 
@@ -44,4 +45,3 @@ beautify	: $(CSRC)
 release	:
 	git archive --format=tar --prefix=retinex_pde/ HEAD \
 	        | gzip > ../retinex_pde.tar.gz
-

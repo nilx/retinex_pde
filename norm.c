@@ -16,7 +16,7 @@
  */
 
 /**
- * @file norm_mean_dt.c
+ * @file norm.c
  * @brief array normalization
  *
  * @author Jose-Luis Lisani <joseluis.lisani@uib.es>
@@ -38,7 +38,7 @@ static void mean_dt(const float *data, size_t size,
                     double *mean_p, double *dt_p)
 {
     double mean, dt;
-    float *ptr_data;
+    const float *ptr_data;
     size_t i;
 
     mean = 0.;
@@ -71,7 +71,7 @@ static void mean_dt(const float *data, size_t size,
  * @param ref reference array
  * @param size size of the arrays
  */
-void norm_dt(float *data, const float *ref, size_t size)
+void normalize_mean_dt(float *data, const float *ref, size_t size)
 {
     double mean_ref, mean_data, dt_ref, dt_data;        /* means and variances */
     double a, b;                /* normalization coefficients */

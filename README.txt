@@ -35,11 +35,11 @@ compilation and execution. See http://www.fftw.org/
 Simply use the provided makefile, with the command `make`.
 
 Alternatively, you can manually compile
-    cc io_png.c norm_mean_dt.c retinex_pde_lib.c retinex_pde.c \
+    cc io_png.c norm.c retinex_pde_lib.c retinex_pde.c \
         -lpng -lfftw3f -o retinex_pde
 
 Multi-threading is possible, with the FFTW_NTHREADS parameter:
-    cc io_png.c norm_mean_dt.c retinex_pde_lib.c retinex_pde.c \
+    cc io_png.c norm.c retinex_pde_lib.c retinex_pde.c \
         -DFFTW_NTHREADS -lpng -lfftw3f -lfftw3f_threads -o retinex_pde
 
 # USAGE
