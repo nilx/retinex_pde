@@ -6,7 +6,7 @@
 # the copyright notice and this notice are preserved.  This file is
 # offered as-is, without any warranty.
 
-CSRC	= io_png.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c
+CSRC	= io_png.c normalize_histo_lib.c retinex_pde_lib.c retinex_pde.c norm_mean_dt.c
 
 SRC	= $(CSRC)
 OBJ	= $(CSRC:.c=.o)

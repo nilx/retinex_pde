@@ -27,8 +27,7 @@
  * @brief command-line interface
  *
  * The input image processed by the retinex transform, then normalized
- * to [0-255], ignoring 3% pixels at the beginning and end of the
- * histogram.
+ * to have the same mean and variance as the input image
  *
  * For comparison, the same input is also normalized by the same
  * normalization process, without retinex transform.
@@ -43,9 +42,7 @@
 #include "retinex_pde_lib.h"
 #include "io_png.h"
 
-#ifndef WITHOUT_NORM
-#include "normalize_histo_lib.h"
-#endif                          /* !WITHOUT_NORM */
+#include "norm_mean_dt.h"
 
 /**
  * @brief main function call
@@ -64,9 +61,9 @@ int main(int argc, char *const *argv)
         return EXIT_SUCCESS;
     }
     /* wrong number of parameters : simple help info */
-    if (5 != argc)
+    if (4 != argc)
     {
-        fprintf(stderr, "usage : %s T in.png norm.png rtnx.png\n", argv[0]);
+        fprintf(stderr, "usage : %s T in.png rtnx.png\n", argv[0]);
         fprintf(stderr, "        T retinex threshold [0...255]\n");
         return EXIT_FAILURE;
     }
@@ -101,18 +98,8 @@ int main(int argc, char *const *argv)
     else
         nc_non_alpha = 1;
 
-    /* normalize data with 3% saturation and save */
-#ifndef WITHOUT_NORM
-    for (channel = 0; channel < nc_non_alpha; channel++)
-        (void) normalize_histo_f32(data + channel * nx * ny,
-                                   nx * ny, 0., 255.,
-                                   (size_t) (0.015 * nx * ny),
-                                   (size_t) (0.015 * nx * ny));
-#endif                          /* !WITHOUT_NORM */
-    write_png_f32(argv[3], data, nx, ny, nc);
-    free(data);
 
-    /* run retinex on data_rtnx, normalize with 3% saturation and save */
+    /* run retinex on data_rtnx, normalize mean and standard deviation and save */
     for (channel = 0; channel < nc_non_alpha; channel++)
     {
         if (NULL == retinex_pde(data_rtnx + channel * nx * ny, nx, ny, t))
@@ -121,14 +108,9 @@ int main(int argc, char *const *argv)
             free(data_rtnx);
             return EXIT_FAILURE;
         }
-#ifndef WITHOUT_NORM
-        (void) normalize_histo_f32(data_rtnx + channel * nx * ny,
-                                   nx * ny, 0., 255.,
-                                   (size_t) (0.015 * nx * ny),
-                                   (size_t) (0.015 * nx * ny));
-#endif                          /* !WITHOUT_NORM */
+	norm_dt(data_rtnx + channel * nx * ny, data + channel * nx * ny, nx*ny);
     }
-    write_png_f32(argv[4], data_rtnx, nx, ny, nc);
+    write_png_f32(argv[3], data_rtnx, nx, ny, nc);
     free(data_rtnx);
 
     return EXIT_SUCCESS;
