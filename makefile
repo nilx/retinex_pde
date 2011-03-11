@@ -12,8 +12,7 @@ SRC	= $(CSRC)
 OBJ	= $(CSRC:.c=.o)
 BIN	= retinex_pde
 
-COPT	= -O3 -funroll-loops -fomit-frame-pointer \
-	-ffast-math -march=native -mtune=native
+COPT	= -O3 -funroll-loops -fomit-frame-pointer -ffast-math
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror $(COPT)
 LDFLAGS	+= -lpng -lfftw3f
 
