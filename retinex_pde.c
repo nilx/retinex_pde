@@ -71,7 +71,7 @@ int main(int argc, char *const *argv)
     }
 
     /* read the PNG image into data */
-    if (NULL == (data = read_png_f32(argv[2], &nx, &ny, &nc))) {
+    if (NULL == (data = io_png_read_f32(argv[2], &nx, &ny, &nc))) {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
@@ -104,7 +104,7 @@ int main(int argc, char *const *argv)
         normalize_mean_dt(data_rtnx + channel * nx * ny,
                           data + channel * nx * ny, nx * ny);
     }
-    write_png_f32(argv[3], data_rtnx, nx, ny, nc);
+    io_png_write_f32(argv[3], data_rtnx, nx, ny, nc);
     free(data_rtnx);
     free(data);
 
