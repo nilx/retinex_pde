@@ -25,6 +25,7 @@
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  *
  * @todo intelligent merge with the u8 versions
+ * @todo simplify with qsort()?
  */
 
 #include <stdlib.h>
