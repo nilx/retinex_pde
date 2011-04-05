@@ -75,7 +75,7 @@ static void mean_dt(const float *data, size_t size,
  */
 void normalize_mean_dt(float *data, const float *ref, size_t size)
 {
-    double mean_ref, mean_data, dt_ref, dt_data;  
+    double mean_ref, mean_data, dt_ref, dt_data;
     double a, b;
     size_t i;
     float *ptr_data;

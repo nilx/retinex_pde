@@ -118,7 +118,7 @@ static float *discrete_laplacian_threshold(float *data_out,
                 if (fabs(diff) > t)
                     *ptr_out += diff;
             }
-            if ( ny - 1 > j) {
+            if (ny - 1 > j) {
                 diff = *ptr_in - *ptr_in_yp1;
                 if (fabs(diff) > t)
                     *ptr_out += diff;
@@ -221,7 +221,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     ptr_cosi++;
     /* continue with the first line from the second value */
     for (i = 1; i < nx; i++)
-	*ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
+        *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
     ptr_cosj++;
     ptr_cosi = cosi;
     /* continue with the other lines */
