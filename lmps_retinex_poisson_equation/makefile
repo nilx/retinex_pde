@@ -46,7 +46,7 @@ updatedemo	:
 	cp script/retinex_pde.sh $(DEMODIR)
 	$(MAKE) -C $(SRCDIR) CC="ccache cc"
 	cp $(SRCDIR)/retinex_pde $(DEMODIR)
-	echo "update the demo" #$(MAKE) -C $(DEMODIR)
+	cd $(DEMODIR) && git add * && git commit -a && git push
 updatewiki	:
 	$(MAKE) src srcdoc
 	cp -f src.tgz src.zip srcdoc.tgz srcdoc.zip $(WIKIDIR)
