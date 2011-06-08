@@ -35,7 +35,7 @@ distclean	: clean
 	$(RM) $(BIN)
 
 # extra tasks
-.PHONY	: lint beautify release
+.PHONY	: lint beautify test release
 lint	: $(CSRC)
 	splint -weak $^;
 beautify	: $(CSRC)
@@ -45,6 +45,8 @@ beautify	: $(CSRC)
 			$$FILE.$$$$ -o $$FILE \
 		&& rm $$FILE.$$$$; \
 	done
+test	: $(CSRC)
+	sh -e test/run.sh && echo SUCCESS || ( echo ERROR; return 1)
 release	:
 	git archive --format=tar --prefix=retinex_pde/ HEAD \
 	        | gzip > ../retinex_pde.tar.gz
