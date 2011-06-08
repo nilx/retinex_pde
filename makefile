@@ -37,7 +37,8 @@ distclean	: clean
 # extra tasks
 .PHONY	: lint beautify test release
 lint	: $(CSRC)
-	splint -weak $^;
+	for FILE in $^; do splint -ansi-lib -weak $$FILE; done;
+	for FILE in $^; do clang --analyze -ansi $$FILE; done; $(RM) *.plist
 beautify	: $(CSRC)
 	for FILE in $^; do \
 		expand $$FILE | sed 's/[ \t]*$$//' > $$FILE.$$$$ \
