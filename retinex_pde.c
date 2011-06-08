@@ -16,13 +16,6 @@
  */
 
 /**
- * @mainpage Retinex Poisson Equation : a Model for Color Perception
- *
- * README.txt:
- * @verbinclude README.txt
- */
-
-/**
  * @file retinex_pde.c
  * @brief command-line interface
  *
