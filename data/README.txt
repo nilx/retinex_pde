@@ -1,4 +1,4 @@
-Adelson.svg
+adelson.svg
 * file from Wikimedia Commons
   http://commons.wikimedia.org/wiki/File:Grey_square_optical_illusion.svg
 * vectorized version of the original Adelson Image
@@ -7,7 +7,7 @@ Adelson.svg
   purpose including unrestricted redistribution, commercial use, and
   modification.
 
-Adelson.png
+adelson.png
 * raster rendering of Adelson.svg
 
 color.png, noisy.png
