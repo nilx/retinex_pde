@@ -23,7 +23,7 @@ _log make clean
 _log make
 
 echo "* compiler support"
-for CC in cc c++ gcc g++ tcc clang icc; do
+for CC in cc c++ gcc g++ tcc clang icc pathcc; do
     if which $CC; then
 	echo "* $CC compiler"
 	_log make distclean
