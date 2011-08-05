@@ -16,7 +16,7 @@ _log_clean() {
 
 _log() {
     echo "  $*"
-    $* >> $LOGFILE 2>&1 
+    "$@" >> $LOGFILE 2>&1
 }
 
 # run test scripts from the same folder
