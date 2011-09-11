@@ -15,7 +15,7 @@ OBJ	= $(CSRC:.c=.o)
 BIN	= retinex_pde
 
 # standard C compiler optimization options
-COPT	= -O3 -funroll-loops -fomit-frame-pointer -ffast-math
+COPT	= -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer -ffast-math
 # complete C compiler options
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror -pipe $(COPT)
 # linker options

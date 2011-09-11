@@ -29,10 +29,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "retinex_pde_lib.h"
 #include "io_png.h"
 #include "norm.h"
+
+/**
+ * @brief CPU time counter update
+ *
+ * Start with timer = 0, then run CLOCK(timer) before and after the
+ * timing blocks. timer always stays >=0, and successive timings will
+ * accumulate.
+ *
+ * CLOCK() must be called an even number of times.
+ */
+#define CLOCK(TIMER) {TIMER = clock() - TIMER;}
 
 /**
  * @brief main function call
@@ -43,6 +55,9 @@ int main(int argc, char *const *argv)
     size_t nx, ny, nc;          /* image size */
     size_t channel, nc_non_alpha;
     float *data, *data_rtnx;
+    clock_t cputime = 0, iotime = 0;
+
+    CLOCK(cputime);
 
     /* "-v" option : version info */
     if (2 <= argc && 0 == strcmp("-v", argv[1])) {
@@ -64,10 +79,12 @@ int main(int argc, char *const *argv)
     }
 
     /* read the PNG image into data */
+    CLOCK(iotime);
     if (NULL == (data = io_png_read_f32(argv[2], &nx, &ny, &nc))) {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
+    CLOCK(iotime);
 
     /* allocate data_rtnx and fill it with a copy of data */
     if (NULL == (data_rtnx = (float *) malloc(nc * nx * ny * sizeof(float)))) {
@@ -97,9 +114,16 @@ int main(int argc, char *const *argv)
         normalize_mean_dt(data_rtnx + channel * nx * ny,
                           data + channel * nx * ny, nx * ny);
     }
+    CLOCK(iotime);
     io_png_write_f32(argv[3], data_rtnx, nx, ny, nc);
+    CLOCK(iotime);
     free(data_rtnx);
     free(data);
+    CLOCK(cputime);
 
+#ifndef NDEBUG
+    printf("cpu time : %0.2fs (including %0.2fs for io)\n",
+           (float) cputime / CLOCKS_PER_SEC, (float) iotime / CLOCKS_PER_SEC);
+#endif
     return EXIT_SUCCESS;
 }
