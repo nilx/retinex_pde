@@ -17,19 +17,20 @@
  * @file debug.h
  * @brief debugging macros
  *
- * If NDEBUG is defined, then all these macros are inactive.
+ * If NDEBUG is defined at the time this header is included, the
+ * macros are ignored.
  *
  * The timer is very simple:
- * - can't measure nested timings
+ * - only one counter
  * - not thread-safe
  *
  * Nested timing is not possible within a compilation unit (file), but
  * possible when functions are called over different compilation
  * units. Your program will not crash and die and burn if you use
  * nested timings or timer routines in a parallel program, but the
- * numbers will be wrong.
+ * numbers may be if clock functions are called from regions.
  *
- * @todo nested timing
+ * @todo multiple counters
  * @todo thread-safe timing
  * @todo cycle timing (cf. http://www.ecrypt.eu.org/ebats/cpucycles.html)
  *
@@ -39,6 +40,7 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+/* NDEBUG already cancels assert() statements in C89 (K&R2, p.254). */
 #ifndef NDEBUG
 
 #include <stdio.h>
@@ -56,7 +58,7 @@
 #define DBG_PRINTF3(STR, A1) {printf(STR, A1, A2, A3);}
 #define DBG_PRINTF4(STR, A1) {printf(STR, A1, A2, A3, A4);}
 
-static clock_t _dbg_timer=0;
+static clock_t _dbg_timer = 0;
 
 /**
  * @brief reset the CPU clock timer
@@ -75,6 +77,11 @@ static clock_t _dbg_timer=0;
 #define DBG_CLOCK_TOGGLE() {_dbg_timer = clock() - _dbg_timer;}
 
 /**
+ * @brief reset and toggle the CPU clock timer
+ */
+#define DBG_CLOCK_START() {DBG_CLOCK_RESET(); DBG_CLOCK_TOGGLE();}
+
+/**
  * @brief CPU clock timer in seconds
  */
 #define DBG_CLOCK_S() ((float) _dbg_timer / CLOCKS_PER_SEC)
@@ -89,8 +96,9 @@ static clock_t _dbg_timer=0;
 
 #define DBG_CLOCK_RESET() {}
 #define DBG_CLOCK_TOGGLE() {}
-#define DBG_CLOCK_S() (0.)
+#define DBG_CLOCK_START() {}
+#define DBG_CLOCK_S() (-1.)
 
-#endif /* !NDEBUG */
+#endif                          /* !NDEBUG */
 
-#endif /* !_DEBUG_H */
+#endif                          /* !_DEBUG_H */

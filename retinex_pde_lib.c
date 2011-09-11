@@ -81,14 +81,13 @@ static float *discrete_laplacian_threshold(float *data_out,
     /* pointers to the current and neighbour values */
     const float *ptr_in, *ptr_in_xm1, *ptr_in_xp1, *ptr_in_ym1, *ptr_in_yp1;
 
-    DBG_CLOCK_RESET();
-    DBG_CLOCK_TOGGLE();
-
     /* sanity check */
     if (NULL == data_in || NULL == data_out) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
         abort();
     }
+
+    DBG_CLOCK_START();
 
     /* pointers to the data and neighbour values */
     /*
@@ -202,8 +201,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     size_t i;
     double m2;
 
-    DBG_CLOCK_RESET();
-    DBG_CLOCK_TOGGLE();
+    DBG_CLOCK_START();
 
     /*
      * get the cosinus tables
@@ -306,8 +304,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 #endif                          /* FFTW_NTHREADS */
 
     /* create the DFT forward plan and run the DCT : data_tmp -> data_fft */
-    DBG_CLOCK_RESET();
-    DBG_CLOCK_TOGGLE();
+    DBG_CLOCK_START();
     dct_fw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_tmp, data_fft,
                                FFTW_REDFT10, FFTW_REDFT10,
@@ -322,7 +319,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     (void) retinex_poisson_dct(data_fft, nx, ny, 1. / (double) (nx * ny));
 
     /* create the DFT backward plan and run the iDCT : data_fft -> data */
-    DBG_CLOCK_TOGGLE();
+    DBG_CLOCK_START();
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_fft, data,
                                FFTW_REDFT01, FFTW_REDFT01,
