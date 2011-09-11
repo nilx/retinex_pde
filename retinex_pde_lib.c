@@ -147,7 +147,7 @@ static float *discrete_laplacian_threshold(float *data_out,
 static double *cos_table(size_t size)
 {
     double *table = NULL;
-    double *ptr_table;
+    double pi_size;
     size_t i;
 
     /* allocate the cosinus table */
@@ -160,9 +160,9 @@ static double *cos_table(size_t size)
      * fill the cosinus table,
      * table[i] = cos(i Pi / n) for i in [0..n[
      */
-    ptr_table = table;
+    pi_size = M_PI / size;
     for (i = 0; i < size; i++)
-        *ptr_table++ = cos((M_PI * i) / size);
+        table[i] = cos(pi_size * i);
 
     return table;
 }
@@ -189,51 +189,40 @@ static double *cos_table(size_t size)
  */
 static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 {
-    float *ptr_data;
-    double *cosi = NULL, *cosj = NULL;
-    double *ptr_cosi, *ptr_cosj;
-    size_t i, j;
+    double *cosx = NULL, *cosy = NULL;
+    size_t i;
     double m2;
 
     /*
      * get the cosinus tables
-     * cosi[i] = cos(i Pi / nx) for i in [0..nx[
-     * cosj[j] = cos(j Pi / ny) for j in [0..ny[
+     * cosx[i] = cos(i Pi / nx) for i in [0..nx[
+     * cosy[i] = cos(i Pi / ny) for i in [0..ny[
      */
-    cosi = cos_table(nx);
-    cosj = cos_table(ny);
+    cosx = cos_table(nx);
+    cosy = cos_table(ny);
 
     /*
      * we will now multiply data[i, j] by
-     * m / (4 - 2 * cosi[i] - 2 * cosj[j]))
-     * and set data[i, j] to 0
+     * m / (4 - 2 * cosx[i] - 2 * cosy[j]))
+     * and set data[0, 0] to 0
      */
     m2 = m / 2.;
-    ptr_data = data;
-    ptr_cosi = cosi;
-    ptr_cosj = cosj;
     /*
      * handle the first value, data[0, 0] = 0
      * after that, by construction, we always have
-     * *ptr_cosi + *ptr_cosj != 2.
+     * cosx[] + cosy[] != 2.
      */
-    *ptr_data++ = 0.;
-    ptr_cosi++;
-    /* continue with the first line from the second value */
-    for (i = 1; i < nx; i++)
-        *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
-    ptr_cosj++;
-    ptr_cosi = cosi;
-    /* continue with the other lines */
-    for (j = 1; j < ny; j++) {
-        for (i = 0; i < nx; i++)
-            *ptr_data++ *= m2 / (2. - *ptr_cosi++ - *ptr_cosj);
-        ptr_cosj++;
-        ptr_cosi = cosi;
-    }
+    data[0] = 0.;
+    /*
+     * continue with all the array:
+     * i % nx is the position on the x axis (column number)
+     * i / nx is the position on the y axis (row number)
+     */
+    for (i = 1; i < nx * ny; i++)
+        data[i] *= m2 / (2. - cosx[i % nx] - cosy[i / nx]);
 
-    free(cosi);
-    free(cosj);
+    free(cosx);
+    free(cosy);
     return data;
 }
 
