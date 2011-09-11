@@ -28,6 +28,9 @@
 
 #include <fftw3.h>
 
+#include "debug.h"
+
+/* ensure consistency */
 #include "retinex_pde_lib.h"
 
 /* M_PI is a POSIX definition */
@@ -77,6 +80,9 @@ static float *discrete_laplacian_threshold(float *data_out,
     float diff;
     /* pointers to the current and neighbour values */
     const float *ptr_in, *ptr_in_xm1, *ptr_in_xp1, *ptr_in_ym1, *ptr_in_yp1;
+
+    DBG_CLOCK_RESET();
+    DBG_CLOCK_TOGGLE();
 
     /* sanity check */
     if (NULL == data_in || NULL == data_out) {
@@ -131,6 +137,9 @@ static float *discrete_laplacian_threshold(float *data_out,
             ptr_out++;
         }
     }
+
+    DBG_CLOCK_TOGGLE();
+    DBG_PRINTF1("laplace\t%0.2fs\n", DBG_CLOCK_S());
 
     return data_out;
 }
@@ -193,6 +202,9 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     size_t i;
     double m2;
 
+    DBG_CLOCK_RESET();
+    DBG_CLOCK_TOGGLE();
+
     /*
      * get the cosinus tables
      * cosx[i] = cos(i Pi / nx) for i in [0..nx[
@@ -223,6 +235,10 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
 
     free(cosx);
     free(cosy);
+
+    DBG_CLOCK_TOGGLE();
+    DBG_PRINTF1("poisson\t%0.2fs\n", DBG_CLOCK_S());
+
     return data;
 }
 
@@ -259,13 +275,24 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     fftwf_plan dct_fw, dct_bw;
     float *data_fft, *data_tmp;
 
-    /*
-     * checks and initialisation
-     */
-
     /* check allocaton */
     if (NULL == data) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
+        abort();
+    }
+
+    /* allocate the float tmp array */
+    if (NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny))) {
+        fprintf(stderr, "allocation error\n");
+        abort();
+    }
+
+    /* compute the laplacian : data -> data_tmp */
+    (void) discrete_laplacian_threshold(data_tmp, data, nx, ny, t);
+
+    /* allocate the float-complex FFT array */
+    if (NULL == (data_fft = (float *) malloc(sizeof(float) * nx * ny))) {
+        fprintf(stderr, "allocation error\n");
         abort();
     }
 
@@ -278,25 +305,16 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     fftwf_plan_with_nthreads(FFTW_NTHREADS);
 #endif                          /* FFTW_NTHREADS */
 
-    /* allocate the float-complex FFT array and the float tmp array */
-    if (NULL == (data_fft = (float *) malloc(sizeof(float) * nx * ny))
-        || NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny))) {
-        fprintf(stderr, "allocation error\n");
-        abort();
-    }
-
-    /*
-     * retinex PDE
-     */
-
-    /* compute the laplacian : data -> data_tmp */
-    (void) discrete_laplacian_threshold(data_tmp, data, nx, ny, t);
     /* create the DFT forward plan and run the DCT : data_tmp -> data_fft */
+    DBG_CLOCK_RESET();
+    DBG_CLOCK_TOGGLE();
     dct_fw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_tmp, data_fft,
                                FFTW_REDFT10, FFTW_REDFT10,
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_fw);
+    DBG_CLOCK_TOGGLE();
+    DBG_PRINTF1("fourier\t%0.2fs\n", DBG_CLOCK_S());
     free(data_tmp);
 
     /* solve the Poisson PDE in Fourier space */
@@ -304,11 +322,14 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     (void) retinex_poisson_dct(data_fft, nx, ny, 1. / (double) (nx * ny));
 
     /* create the DFT backward plan and run the iDCT : data_fft -> data */
+    DBG_CLOCK_TOGGLE();
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_fft, data,
                                FFTW_REDFT01, FFTW_REDFT01,
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_bw);
+    DBG_CLOCK_TOGGLE();
+    DBG_PRINTF1("fourier\t%0.2fs\n", DBG_CLOCK_S());
 
     /* cleanup */
     fftwf_destroy_plan(dct_fw);
@@ -318,5 +339,6 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 #ifdef FFTW_NTHREADS
     fftwf_cleanup_threads();
 #endif                          /* FFTW_NTHREADS */
+
     return data;
 }
