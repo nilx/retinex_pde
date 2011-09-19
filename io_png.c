@@ -753,6 +753,7 @@ static void _io_png_write(const char *fname, const float *data,
     /* clean up and free any memory allocated, close the file */
     png_destroy_write_struct(&png_ptr, &info_ptr);
     free(row_pointers);
+    free(png_data);
     if (stdout != fp)
         (void) fclose(fp);
 
