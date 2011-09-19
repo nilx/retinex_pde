@@ -5,18 +5,27 @@
 extern "C" {
 #endif
 
-#define IO_PNG_VERSION "0.20110608"
+#define IO_PNG_VERSION "0.20110919"
 
 #include <stddef.h>
 
-unsigned char *io_png_read_u8(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp);
-unsigned char *io_png_read_u8_rgb(const char *fname, size_t *nxp, size_t *nyp);
-unsigned char *io_png_read_u8_gray(const char *fname, size_t *nxp, size_t *nyp);
-float *io_png_read_f32(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp);
-float *io_png_read_f32_rgb(const char *fname, size_t *nxp, size_t *nyp);
-float *io_png_read_f32_gray(const char *fname, size_t *nxp, size_t *nyp);
-int io_png_write_u8(const char *fname, const unsigned char *data, size_t nx, size_t ny, size_t nc);
-int io_png_write_f32(const char *fname, const float *data, size_t nx, size_t ny, size_t nc);
+typedef enum io_png_opt_e {
+    IO_PNG_OPT_NONE = 0,
+    IO_PNG_OPT_RGB = 1,
+    IO_PNG_OPT_GRAY = 2
+} io_png_opt_t;
+
+/* io_png.c */
+char *io_png_info(void);
+float *io_png_read_pp_flt(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp, io_png_opt_t opt);
+float *io_png_read_flt(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp);
+unsigned char *io_png_read_pp_uchar(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp, io_png_opt_t opt);
+unsigned char *io_png_read_uchar(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp);
+unsigned short *io_png_read_pp_ushrt(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp, io_png_opt_t opt);
+unsigned short *io_png_read_ushrt(const char *fname, size_t *nxp, size_t *nyp, size_t *ncp);
+void io_png_write_flt(const char *fname, const float *data, size_t nx, size_t ny, size_t nc);
+void io_png_write_uchar(const char *fname, const unsigned char *data, size_t nx, size_t ny, size_t nc);
+void io_png_write_ushrt(const char *fname, const unsigned char *data, size_t nx, size_t ny, size_t nc);
 
 #ifdef __cplusplus
 }

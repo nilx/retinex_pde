@@ -5,8 +5,9 @@
 # simple code execution
 _test_run() {
     TEMPFILE=$(tempfile)
-    ./retinex_pde 5 data/noisy.png $TEMPFILE
-    test "c77e3675850da101951f230b45d28af5  $TEMPFILE" \
+    # 0.019607843137254902 = 5 / 255
+    ./retinex_pde 0.019607843137254902 data/noisy.png $TEMPFILE
+    test "ddd2c38819d9d82bb5582317dfae95c3  $TEMPFILE" \
 	= "$(md5sum $TEMPFILE)"
 }
 
@@ -15,7 +16,7 @@ _test_run() {
 _log_init
 
 echo "* default build, clean, rebuild"
-_log make -B CFLAGS+=-UNDEBUG
+_log make -B debug
 _log _test_run
 _log make -B
 _log _test_run
@@ -31,6 +32,9 @@ for CC in cc c++ gcc g++ tcc nwcc clang icc pathcc suncc; do
     case $CC in
 	"gcc"|"g++")
 	    _log make CC=$CC ;;
+	"icc")
+	    # default icc behaviour is wrong divisions!
+	    _log make CC=$CC CFLAGS="-fp-model precise";;
 	*)
 	    _log make CC=$CC CFLAGS= ;;
     esac

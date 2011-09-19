@@ -49,7 +49,7 @@ run the program.
 
 This program takes 4 parameters: `retinex_pde T in.png rtnx.png`
 
-* `T`        : retinex threshold [0...255[
+* `T`        : retinex threshold, in [0,1[
 * `in.png`   : input image
 * `rtnx.png` : retinex output image
 

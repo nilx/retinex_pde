@@ -53,20 +53,20 @@ int main(int argc, char *const *argv)
     /* wrong number of parameters : simple help info */
     if (4 != argc) {
         fprintf(stderr, "usage : %s T in.png rtnx.png\n", argv[0]);
-        fprintf(stderr, "        T retinex threshold [0...255]\n");
+        fprintf(stderr, "        T retinex threshold [0,1[\n");
         return EXIT_FAILURE;
     }
 
     /* retinex threshold */
     t = atof(argv[1]);
-    if (0. > t || 255. < t) {
-        fprintf(stderr, "the retinex threshold must be in [0..255]\n");
+    if (0. > t || 1. <= t) {
+        fprintf(stderr, "the retinex float threshold must be in [0,1[\n");
         return EXIT_FAILURE;
     }
 
     /* read the PNG image into data */
     DBG_CLOCK_START(0);
-    if (NULL == (data = io_png_read_f32(argv[2], &nx, &ny, &nc))) {
+    if (NULL == (data = io_png_read_flt(argv[2], &nx, &ny, &nc))) {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
@@ -101,7 +101,7 @@ int main(int argc, char *const *argv)
                           data + channel * nx * ny, nx * ny);
     }
     DBG_CLOCK_TOGGLE(0);
-    io_png_write_f32(argv[3], data_rtnx, nx, ny, nc);
+    io_png_write_flt(argv[3], data_rtnx, nx, ny, nc);
     DBG_CLOCK_TOGGLE(0);
     DBG_PRINTF1("io\t%0.2fs\n", DBG_CLOCK_S(0));
 
