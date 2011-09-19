@@ -39,6 +39,12 @@
 #define M_PI 3.14159265358979323846
 #endif                          /* !M_PI */
 
+#ifndef NDEBUG
+#define LAPLACE 1
+#define POISSON 2
+#define FOURIER 3
+#endif
+
 /*
  * number of threads to use for libfftw
  * define to enable parallel FFT multi-threading
@@ -87,7 +93,7 @@ static float *discrete_laplacian_threshold(float *data_out,
         abort();
     }
 
-    DBG_CLOCK_START();
+    DBG_CLOCK_TOGGLE(LAPLACE);
 
     /* pointers to the data and neighbour values */
     /*
@@ -137,8 +143,7 @@ static float *discrete_laplacian_threshold(float *data_out,
         }
     }
 
-    DBG_CLOCK_TOGGLE();
-    DBG_PRINTF1("laplace\t%0.2fs\n", DBG_CLOCK_S());
+    DBG_CLOCK_TOGGLE(LAPLACE);
 
     return data_out;
 }
@@ -201,7 +206,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     size_t i;
     double m2;
 
-    DBG_CLOCK_START();
+    DBG_CLOCK_TOGGLE(POISSON);
 
     /*
      * get the cosinus tables
@@ -234,8 +239,7 @@ static float *retinex_poisson_dct(float *data, size_t nx, size_t ny, double m)
     free(cosx);
     free(cosy);
 
-    DBG_CLOCK_TOGGLE();
-    DBG_PRINTF1("poisson\t%0.2fs\n", DBG_CLOCK_S());
+    DBG_CLOCK_TOGGLE(POISSON);
 
     return data;
 }
@@ -273,6 +277,10 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     fftwf_plan dct_fw, dct_bw;
     float *data_fft, *data_tmp;
 
+    DBG_CLOCK_RESET(LAPLACE);
+    DBG_CLOCK_RESET(POISSON);
+    DBG_CLOCK_RESET(FOURIER);
+
     /* check allocaton */
     if (NULL == data) {
         fprintf(stderr, "a pointer is NULL and should not be so\n");
@@ -304,14 +312,13 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 #endif                          /* FFTW_NTHREADS */
 
     /* create the DFT forward plan and run the DCT : data_tmp -> data_fft */
-    DBG_CLOCK_START();
+    DBG_CLOCK_TOGGLE(FOURIER);
     dct_fw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_tmp, data_fft,
                                FFTW_REDFT10, FFTW_REDFT10,
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_fw);
-    DBG_CLOCK_TOGGLE();
-    DBG_PRINTF1("fourier\t%0.2fs\n", DBG_CLOCK_S());
+    DBG_CLOCK_TOGGLE(FOURIER);
     free(data_tmp);
 
     /* solve the Poisson PDE in Fourier space */
@@ -319,14 +326,13 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     (void) retinex_poisson_dct(data_fft, nx, ny, 1. / (double) (nx * ny));
 
     /* create the DFT backward plan and run the iDCT : data_fft -> data */
-    DBG_CLOCK_START();
+    DBG_CLOCK_TOGGLE(FOURIER);
     dct_bw = fftwf_plan_r2r_2d((int) ny, (int) nx,
                                data_fft, data,
                                FFTW_REDFT01, FFTW_REDFT01,
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_bw);
-    DBG_CLOCK_TOGGLE();
-    DBG_PRINTF1("fourier\t%0.2fs\n", DBG_CLOCK_S());
+    DBG_CLOCK_TOGGLE(FOURIER);
 
     /* cleanup */
     fftwf_destroy_plan(dct_fw);
@@ -336,6 +342,10 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
 #ifdef FFTW_NTHREADS
     fftwf_cleanup_threads();
 #endif                          /* FFTW_NTHREADS */
+
+    DBG_PRINTF1("laplace\t%0.2fs\n", DBG_CLOCK_S(LAPLACE));
+    DBG_PRINTF1("poisson\t%0.2fs\n", DBG_CLOCK_S(POISSON));
+    DBG_PRINTF1("fourier\t%0.2fs\n", DBG_CLOCK_S(FOURIER));
 
     return data;
 }

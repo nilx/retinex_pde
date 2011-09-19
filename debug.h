@@ -20,20 +20,6 @@
  * If NDEBUG is defined at the time this header is included, the
  * macros are ignored.
  *
- * The timer is very simple:
- * - only one counter
- * - not thread-safe
- *
- * Nested timing is not possible within a compilation unit (file), but
- * possible when functions are called over different compilation
- * units. Your program will not crash and die and burn if you use
- * nested timings or timer routines in a parallel program, but the
- * numbers may be if clock functions are called from regions.
- *
- * @todo multiple counters
- * @todo thread-safe timing
- * @todo cycle timing (cf. http://www.ecrypt.eu.org/ebats/cpucycles.html)
- *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  */
 
@@ -45,6 +31,10 @@
 
 #include <stdio.h>
 #include <time.h>
+
+/*
+ * DEBUG MESSAGES
+ */
 
 /**
  * @brief print debug statements
@@ -58,33 +48,100 @@
 #define DBG_PRINTF3(STR, A1) {printf(STR, A1, A2, A3);}
 #define DBG_PRINTF4(STR, A1) {printf(STR, A1, A2, A3, A4);}
 
-static clock_t _dbg_timer = 0;
+/*
+ * CPU CLOCK TIMER
+ */
 
 /**
- * @brief reset the CPU clock timer
+ * @file debug.h
+ *
+ * The clock timers are not thread-safe. Your program will not crash and die
+ * and burn if you use clock routines in a parallel program, but the
+ * numbers may be if clock routines are called from parallel regions.
+ *
+ * @todo thread-safe clock timing
  */
-#define DBG_CLOCK_RESET() {_dbg_timer = 0;}
+
+/** number of clock counters */
+#define DBG_CLOCK_NB 16
+
+/** clock counter array, initialized to 0 (K&R2, p.86) */
+static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
 
 /**
- * @brief increment the CPU clock timer
+ * @brief reset a CPU clock counter
  *
- * Start with timer = 0, then run DBG_CLOCK_TOGGLE() before and after the
- * timing blocks. _dbg_timer always stays >=0, and successive timings will
- * accumulate.
- *
- * CLOCK() must be called an even number of times.
+ * @param N id of the counter, between 0 and DBG_CLOCK_NB
  */
-#define DBG_CLOCK_TOGGLE() {_dbg_timer = clock() - _dbg_timer;}
+#define DBG_CLOCK_RESET(N) { _dbg_clock_counter[N] = 0; }
+
+/**
+ * @brief toggle (start/stop) a CPU clock counter
+ *
+ * To measure the CPU clock time taken by an inscruction block, call
+ * DBG_CLOCK_TOGGLE() before and after the block. The two successive
+ * substractions will increase the counter by the difference of the
+ * successive CPU clocks. There is no overflow, _dbg_clock_counter
+ * always stays between 0 ans 2x the total execution time.
+ *
+ * Between the two toggles, the counter values are meaningless.
+ * DBG_CLOCK_TOGGLE() must be called an even number of times to make
+ * sense.
+ *
+ * @param N id of the counter, between 0 and DBG_CLOCK_NB
+ */
+#define DBG_CLOCK_TOGGLE(N) { \
+        _dbg_clock_counter[N] = clock() - _dbg_clock_counter[N]; }
 
 /**
  * @brief reset and toggle the CPU clock timer
+ *
+ * @param N id of the counter, between 0 and DBG_CLOCK_NB
  */
-#define DBG_CLOCK_START() {DBG_CLOCK_RESET(); DBG_CLOCK_TOGGLE();}
+#define DBG_CLOCK_START(N) { \
+        DBG_CLOCK_RESET(N); DBG_CLOCK_TOGGLE(N); }
 
 /**
  * @brief CPU clock timer in seconds
+ *
+ * @param N id of the counter, between 0 and DBG_CLOCK_NB
  */
-#define DBG_CLOCK_S() ((float) _dbg_timer / CLOCKS_PER_SEC)
+#define DBG_CLOCK_S(N) ((float) _dbg_clock_counter[N] / CLOCKS_PER_SEC)
+
+/*
+ * CPU CYCLES COUNTER
+ */
+
+#ifdef _UNDEFINED
+
+static long long _dbg_cycles = 0;
+
+/**
+ * @brief reset the cycles counter
+ */
+#define DBG_CYCLES_RESET() { _dbg_cycles = 0; }
+
+/**
+ * @brief increment the cycles counter
+ *
+ * Start with _dbg_cycles = 0, then run DBG_CYCLES_TOGGLE() before and
+ * after the timing blocks. _dbg_cycles always stays >=0, and
+ * successive timings will accumulate.
+ *
+ * DBG_CYCLES_TOGGLE() must be called an even number of times to make sense.
+ */
+#define DBG_CYCLES_TOGGLE() {                                           \
+    unsigned long long counter;                                         \
+    asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"     \
+                 : "=a" (counter) ::  "%rdx");                          \
+    _dbg_cycles = counter - _dbg_cycles; }
+
+/**
+ * @brief reset and toggle the cycles counter
+ */
+#define DBG_CYCLES_START() { DBG_CYCLES_RESET(); DBG_CYCLES_TOGGLE(); }
+
+#endif
 
 #else
 
@@ -94,10 +151,11 @@ static clock_t _dbg_timer = 0;
 #define DBG_PRINTF3(STR, A1) {}
 #define DBG_PRINTF4(STR, A1) {}
 
-#define DBG_CLOCK_RESET() {}
-#define DBG_CLOCK_TOGGLE() {}
-#define DBG_CLOCK_START() {}
-#define DBG_CLOCK_S() (-1.)
+#define DBG_CLOCK_NB 0;
+#define DBG_CLOCK_RESET(N) {}
+#define DBG_CLOCK_TOGGLE(N) {}
+#define DBG_CLOCK_START(N) {}
+#define DBG_CLOCK_S(N) (-1.)
 
 #endif                          /* !NDEBUG */
 

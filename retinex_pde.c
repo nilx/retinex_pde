@@ -65,13 +65,12 @@ int main(int argc, char *const *argv)
     }
 
     /* read the PNG image into data */
-    DBG_CLOCK_START();
+    DBG_CLOCK_START(0);
     if (NULL == (data = io_png_read_f32(argv[2], &nx, &ny, &nc))) {
         fprintf(stderr, "the image could not be properly read\n");
         return EXIT_FAILURE;
     }
-    DBG_CLOCK_TOGGLE();
-    DBG_PRINTF1("read\t%0.2fs\n", DBG_CLOCK_S());
+    DBG_CLOCK_TOGGLE(0);
 
     /* allocate data_rtnx and fill it with a copy of data */
     if (NULL == (data_rtnx = (float *) malloc(nc * nx * ny * sizeof(float)))) {
@@ -101,10 +100,10 @@ int main(int argc, char *const *argv)
         normalize_mean_dt(data_rtnx + channel * nx * ny,
                           data + channel * nx * ny, nx * ny);
     }
-    DBG_CLOCK_START();
+    DBG_CLOCK_TOGGLE(0);
     io_png_write_f32(argv[3], data_rtnx, nx, ny, nc);
-    DBG_CLOCK_TOGGLE();
-    DBG_PRINTF1("write\t%0.2fs\n", DBG_CLOCK_S());
+    DBG_CLOCK_TOGGLE(0);
+    DBG_PRINTF1("io\t%0.2fs\n", DBG_CLOCK_S(0));
 
     free(data_rtnx);
     free(data);
