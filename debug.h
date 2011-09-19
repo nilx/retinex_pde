@@ -15,7 +15,7 @@
 
 /**
  * @file debug.h
- * @brief debugging macros
+ * @brief debugging and profiling macros
  *
  * If NDEBUG is defined at the time this header is included, the
  * macros are ignored.
@@ -37,7 +37,7 @@
  */
 
 /**
- * @brief print debug statements
+ * @brief printf()-like debug statements
  *
  * Variadic macros are not ANSI C89, so we define a set of macros with
  * a fixed number of arguments.
@@ -55,11 +55,33 @@
 /**
  * @file debug.h
  *
- * The clock timers are not thread-safe. Your program will not crash and die
- * and burn if you use clock routines in a parallel program, but the
- * numbers may be if clock routines are called from parallel regions.
+ * Some clock counters are available at the compilation unit (source
+ * file) level. Each counter can be toggled on/off with
+ * DBG_CLOCK_TOGGLE(N), with N between 0 and DBG_CLOCK_NB - 1.
+ * Successive on/off toggle of the same counter, even from different
+ * functions or different calls to the same function, will add clock
+ * time until the counter is reset with DBG_CLOCK_RESET(N). The
+ * counter time can be read in seconds (float) with DBG_CLOCK_S(N) and
+ * its raw value (long) with DBG_CLOCK(N).
  *
- * @todo thread-safe clock timing
+ * Between the two toggles, the counter values are meaningless.
+ * DBG_CLOCK_TOGGLE() must be called an even number of times to make
+ * sense.
+ *
+ * These macros use the C89 libc clock() call, they measure the CPU
+ * time used. Note that this is the total CPU time, on all CPUs, not
+ * the "wall clock" time: a process running on 8 CPUs for 2 seconds
+ * uses 16s of CPU time. The CPU time is not affected directly by
+ * other programs running on the machine, but there may be some
+ * side-effect because of the ressource conflicts like CPU cache reload.
+ * These macros are suitable when the measured time is around a second
+ * or more.
+ *
+ * The clock counters are not thread-safe. Your program will not crash
+ * and die and burn if you use clock macros in a parallel program,
+ * but the numbers may be wrong be if clock macros are called in parallel.
+ *
+ * @todo OpenMP-aware clock timing
  */
 
 /** number of clock counters */
@@ -70,41 +92,36 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
 
 /**
  * @brief reset a CPU clock counter
- *
- * @param N id of the counter, between 0 and DBG_CLOCK_NB
  */
 #define DBG_CLOCK_RESET(N) { _dbg_clock_counter[N] = 0; }
 
 /**
  * @brief toggle (start/stop) a CPU clock counter
  *
- * To measure the CPU clock time taken by an inscruction block, call
- * DBG_CLOCK_TOGGLE() before and after the block. The two successive
- * substractions will increase the counter by the difference of the
- * successive CPU clocks. There is no overflow, _dbg_clock_counter
- * always stays between 0 ans 2x the total execution time.
+ * To measure the CPU clock time used by an instruction block, call
+ * DBG_CLOCK_TOGGLE() before and after the block.
  *
- * Between the two toggles, the counter values are meaningless.
- * DBG_CLOCK_TOGGLE() must be called an even number of times to make
- * sense.
- *
- * @param N id of the counter, between 0 and DBG_CLOCK_NB
+ * The two successive substractions will increase the counter by the
+ * difference of the successive CPU clocks. There is no overflow,
+ * _dbg_clock_counter always stays between 0 and 2x the total
+ * execution time.
  */
 #define DBG_CLOCK_TOGGLE(N) { \
         _dbg_clock_counter[N] = clock() - _dbg_clock_counter[N]; }
 
 /**
- * @brief reset and toggle the CPU clock timer
- *
- * @param N id of the counter, between 0 and DBG_CLOCK_NB
+ * @brief reset and toggle the CPU clock counter
  */
 #define DBG_CLOCK_START(N) { \
         DBG_CLOCK_RESET(N); DBG_CLOCK_TOGGLE(N); }
 
 /**
- * @brief CPU clock timer in seconds
- *
- * @param N id of the counter, between 0 and DBG_CLOCK_NB
+ * @brief CPU clock counter
+ */
+#define DBG_CLOCK(N) ((long) _dbg_clock_counter[N])
+
+/**
+ * @brief CPU clock time in seconds
  */
 #define DBG_CLOCK_S(N) ((float) _dbg_clock_counter[N] / CLOCKS_PER_SEC)
 
@@ -112,38 +129,97 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  * CPU CYCLES COUNTER
  */
 
-#ifdef _UNDEFINED
-
-static long long _dbg_cycles = 0;
-
 /**
- * @brief reset the cycles counter
- */
-#define DBG_CYCLES_RESET() { _dbg_cycles = 0; }
-
-/**
- * @brief increment the cycles counter
+ * @file debug.h
  *
- * Start with _dbg_cycles = 0, then run DBG_CYCLES_TOGGLE() before and
- * after the timing blocks. _dbg_cycles always stays >=0, and
- * successive timings will accumulate.
+ * Some CPU cycle counters are available and follow the same model as
+ * the clock counters. Cycle counters are toggled on/off with
+ * DBG_CYCLE_TOGGLE(N), with N between 0 and DBG_CYCLE_NB - 1.
+ * Couters are reset with DBG_CYCLE_RESET(N) can be read (long long)
+ * with DBG_CYCLE(N).
  *
- * DBG_CYCLES_TOGGLE() must be called an even number of times to make sense.
+ * These macros use the work of Daniel J. Bernstein:
+ *   http://ebats.cr.yp.to/cpucycles.html
+ *   http://ebats.cr.yp.to/cpucycles-20060326.tar.gz
+ *
+ * These macros are suitable to measure the CPU cost of a few
+ * instructions, and should not be used when multitasking interrupts
+ * the measure. For good results, repeat the measures many times, take
+ * the median, and remove tke cost of the measure itself (median time
+ * between two adjacent measures).
+ *
+ * Theses macros are not for parallel programs. They are only
+ * available on x86 and amd64 hardware.
+ *
+ * @todo more architectures
  */
-#define DBG_CYCLES_TOGGLE() {                                           \
-    unsigned long long counter;                                         \
-    asm volatile(".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax"     \
-                 : "=a" (counter) ::  "%rdx");                          \
-    _dbg_cycles = counter - _dbg_cycles; }
 
-/**
- * @brief reset and toggle the cycles counter
- */
-#define DBG_CYCLES_START() { DBG_CYCLES_RESET(); DBG_CYCLES_TOGGLE(); }
+#if (defined(__amd64__) || defined(__amd64) || defined(_M_X64))
+/* from http://predef.sourceforge.net/prearch.html#sec3 */
 
-#endif
+/** CPU cycles counter for x86 */
+static long long _dbg_cpucycles(void)
+{
+    long long result;
+    asm volatile (".byte 15;.byte 49":"=A" (result));
+    return result;
+}
+
+#elif (defined(__i386__) || defined(__i386) || defined(_M_IX86) \
+       || defined(__X86__) || defined(_X86_) || defined(__I86__))
+/* from http://predef.sourceforge.net/prearch.html#sec6 */
+
+/** CPU cycles counter for amd64 */
+static long long _dbg_cpucycles(void)
+{
+    unsigned long long result;
+    asm volatile (".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax":"=a"
+                  (result)::"%rdx");
+    return result;
+}
 
 #else
+
+/** dummy CPU cycles counter */
+static long long _dbg_cpucycles(void)
+{
+    return 0;
+}
+
+#endif                          /* architecture detection */
+
+/** number of cycle counters */
+#define DBG_CYCLE_NB 16
+
+/** cycle counter array, initialized to 0 */
+static long long _dbg_cycle_counter[DBG_CYCLE_NB];
+
+/**
+ * @brief reset a CPU cycle counter
+ */
+#define DBG_CYCLE_RESET(N) { _dbg_cycle_counter[N] = 0; }
+
+/**
+ * @brief toggle (start/stop) a CPU cycle counter
+ *
+ * To measure the CPU cycles used by an instruction block, call
+ * DBG_CYCLE_TOGGLE() before and after the block.
+ */
+#define DBG_CYCLE_TOGGLE(N) { \
+        _dbg_cycle_counter[N] = _dbg_cpucycles() - _dbg_cycle_counter[N]; }
+
+/**
+ * @brief reset and toggle the CPU cycles counter
+ */
+#define DBG_CYCLE_START(N) { \
+        DBG_CYCLE_RESET(N); DBG_CYCLE_TOGGLE(N); }
+
+/**
+ * @brief CPU cycle counter
+ */
+#define DBG_CYCLE(N) (_dbg_cycle_counter[N])
+
+#else                           /* !NDEBUG */
 
 #define DBG_PRINTF0(STR) {}
 #define DBG_PRINTF1(STR, A1) {}
@@ -155,7 +231,14 @@ static long long _dbg_cycles = 0;
 #define DBG_CLOCK_RESET(N) {}
 #define DBG_CLOCK_TOGGLE(N) {}
 #define DBG_CLOCK_START(N) {}
+#define DBG_CLOCK(N) (-1)
 #define DBG_CLOCK_S(N) (-1.)
+
+#define DBG_CYCLE_NB 0;
+#define DBG_CYCLE_RESET(N) {}
+#define DBG_CYCLE_TOGGLE(N) {}
+#define DBG_CYCLE_START(N) {}
+#define DBG_CYCLE(N) (-1)
 
 #endif                          /* !NDEBUG */
 
