@@ -15,7 +15,7 @@ OBJ	= $(SRC:.c=.o)
 BIN	= retinex_pde
 
 # standard C compiler optimization options
-COPT	= -O3 -DNDEBUG -funroll-loops -fomit-frame-pointer
+COPT	= -O3 -DNDEBUG
 # complete C compiler options
 CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror -pipe $(COPT)
 # linker options
@@ -45,38 +45,6 @@ distclean	: clean
 	$(RM) -r srcdoc
 
 ################################################
-# extra tasks
-
+# dev tasks
 PROJECT	= retinex_pde
-DATE	= $(shell date -u +%Y%m%d)
-RELEASE_TAG   = 0.$(DATE)
-
-.PHONY	: srcdoc lint beautify debug test release
-# source documentation
-srcdoc	: $(SRC) $(HDR)
-	doxygen doc/doxygen.conf
-# code cleanup
-beautify	: $(SRC) $(HDR)
-	for FILE in $^; do \
-		expand $$FILE | sed 's/[ \t]*$$//' > $$FILE.$$$$ \
-		&& indent -kr -i4 -l78 -nut -nce -sob -sc \
-			$$FILE.$$$$ -o $$FILE \
-		&& rm $$FILE.$$$$; \
-	done
-# static code analysis
-lint	: $(SRC)
-	for FILE in $^; do \
-		clang --analyze -ansi -DNDEBUG -I. $$FILE || exit 1; done;
-	for FILE in $^; do \
-		splint -ansi-lib -weak -DNDEBUG -I. $$FILE || exit 1; done;
-	$(RM) *.plist
-# debug build
-debug	: $(SRC)
-	$(MAKE) CFLAGS=-g LDFLAGS="$(LDFLAGS) -lefence"
-# code tests
-test	: $(SRC) $(HDR)
-	sh -e test/run.sh && echo SUCCESS || ( echo ERROR; return 1)
-# release tarball
-release	: beautify lint test distclean
-	git archive --format=tar --prefix=$(PROJECT)-$(RELEASE_TAG)/ HEAD \
-	        | gzip > ../$(PROJECT)-$(RELEASE_TAG).tar.gz
+-include	makefile.dev
