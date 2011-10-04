@@ -15,14 +15,16 @@ OBJ	= $(SRC:.c=.o)
 BIN	= retinex_pde
 
 # standard C compiler optimization options
-COPT	= -O3 -DNDEBUG
+COPT	= -O3
 # complete C compiler options
-CFLAGS	+= -ansi -pedantic -Wall -Wextra -Werror -pipe $(COPT)
+CFLAGS	= -ansi -pedantic -Wall -Wextra -Werror -pipe $(COPT)
+# preprocessor options
+CPPFLAGS	= -I. -DNDEBUG
 # linker options
-LDFLAGS	+= -lpng -lfftw3f
+LDFLAGS	= -lpng -lfftw3f
 
 # uncomment this part to use the multi-threaded DCT
-#CPPFLAGS	= -DFFTW_NTHREADS=8
+#CPPFLAGS	+= -DFFTW_NTHREADS=8
 #LDFLAGS	+= -lfftw3f_threads -lpthread
 
 # default target: the binary executable programs

@@ -30,7 +30,8 @@ lint	: $(SRC)
 	$(RM) *.plist
 # debug build
 debug	: $(SRC)
-	$(MAKE) CFLAGS=-g LDFLAGS="$(LDFLAGS) -lefence"
+	$(MAKE) CFLAGS="-g" CPPFLAGS="$(CPPFLAGS) -UNDEBUG" \
+		LDFLAGS="$(LDFLAGS) -lefence"
 # code tests
 test	: $(SRC) $(HDR)
 	sh -e test/run.sh && echo SUCCESS || ( echo ERROR; return 1)
