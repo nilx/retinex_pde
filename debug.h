@@ -18,16 +18,14 @@
  * @brief debugging and profiling macros
  *
  * If NDEBUG is defined at the time this header is included, the
- * macros are ignored.
+ * macros are ignored. We chose NDEBUG because this macro already
+ * cancels assert() statements in C89 (K&R2, p.254).
  *
  * @author Nicolas Limare <nicolas.limare@cmla.ens-cachan.fr>
  */
 
 #ifndef _DEBUG_H
 #define _DEBUG_H
-
-/* NDEBUG already cancels assert() statements in C89 (K&R2, p.254). */
-#ifndef NDEBUG
 
 #include <stdio.h>
 #include <time.h>
@@ -36,17 +34,33 @@
  * DEBUG MESSAGES
  */
 
+#ifndef NDEBUG
+
 /**
  * @brief printf()-like debug statements
  *
  * Variadic macros are not ANSI C89, so we define a set of macros with
  * a fixed number of arguments.
+ *
+ * Use like printf():
+ * DBG_PRINTF("entering function foo()\n");
+ * DBG_PRINTF2("i=%i, j=%i\n", i, j);
  */
 #define DBG_PRINTF0(STR) {printf(STR);}
 #define DBG_PRINTF1(STR, A1) {printf(STR, A1);}
-#define DBG_PRINTF2(STR, A1) {printf(STR, A1, A2);}
-#define DBG_PRINTF3(STR, A1) {printf(STR, A1, A2, A3);}
-#define DBG_PRINTF4(STR, A1) {printf(STR, A1, A2, A3, A4);}
+#define DBG_PRINTF2(STR, A1, A2) {printf(STR, A1, A2);}
+#define DBG_PRINTF3(STR, A1, A2, A3) {printf(STR, A1, A2, A3);}
+#define DBG_PRINTF4(STR, A1, A2, A3, A4) {printf(STR, A1, A2, A3, A4);}
+
+#else
+
+#define DBG_PRINTF0(STR) {}
+#define DBG_PRINTF1(STR, A1) {}
+#define DBG_PRINTF2(STR, A1, A2) {}
+#define DBG_PRINTF3(STR, A1, A2, A3) {}
+#define DBG_PRINTF4(STR, A1, A2, A3, A4) {}
+
+#endif                          /* !NDEBUG */
 
 /*
  * CPU CLOCK TIMER
@@ -81,8 +95,20 @@
  * and die and burn if you use clock macros in a parallel program,
  * but the numbers may be wrong be if clock macros are called in parallel.
  *
+ * Usage:
+ *   DBG_CLOCK_RESET(N)
+ *   for(i = 0; i < large_number; i++) {
+ *     DBG_CLOCK_TOGGLE(N)
+ *     some_operations
+ *     DBG_CLOCK_TOGGLE(N)
+ *     other_operations
+ *   }
+ *   DBG_PRINTF1("CPU time spent in some_ops: %0.3fs\n", DBG_CLOCK_S(N));
+ *
  * @todo OpenMP-aware clock timing
  */
+
+#ifndef NDEBUG
 
 /** number of clock counters */
 #define DBG_CLOCK_NB 16
@@ -125,6 +151,17 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  */
 #define DBG_CLOCK_S(N) ((float) _dbg_clock_counter[N] / CLOCKS_PER_SEC)
 
+#else
+
+#define DBG_CLOCK_NB 0;
+#define DBG_CLOCK_RESET(N) {}
+#define DBG_CLOCK_TOGGLE(N) {}
+#define DBG_CLOCK_START(N) {}
+#define DBG_CLOCK(N) (-1)
+#define DBG_CLOCK_S(N) (-1.)
+
+#endif                          /* !NDEBUG */
+
 /*
  * CPU CYCLES COUNTER
  */
@@ -135,8 +172,8 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  * Some CPU cycle counters are available and follow the same model as
  * the clock counters. Cycle counters are toggled on/off with
  * DBG_CYCLE_TOGGLE(N), with N between 0 and DBG_CYCLE_NB - 1.
- * Couters are reset with DBG_CYCLE_RESET(N) can be read (long long)
- * with DBG_CYCLE(N).
+ * Counters are reset with DBG_CYCLE_RESET(N) and can be read with
+ * DBG_CYCLE(N).
  *
  * These macros use the work of Daniel J. Bernstein:
  *   http://ebats.cr.yp.to/cpucycles.html
@@ -144,24 +181,69 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  *
  * These macros are suitable to measure the CPU cost of a few
  * instructions, and should not be used when multitasking interrupts
- * the measure. For good results, repeat the measures many times, take
- * the median, and remove tke cost of the measure itself (median time
- * between two adjacent measures).
+ * the measure.
+ *
+ * Usage:
+ *   DBG_CYCLE_RESET(N)
+ *   for(i = 0; i < large_number; i++) {
+ *     DBG_CYCLE_STARTTOGGLE(N)
+ *     some_operations
+ *     DBG_CLOCK_TOGGLE(N)
+ *     other_operations
+ *   }
+ *   DBG_PRINTF1("Total CPU cycles spent in some_ops: %lld\n", DBG_CYCLE(N));
+ *
+ * For good results, repeat the measures many times, take the median,
+ * and remove the cost of the measure itself (median time between two
+ * adjacent measures).
+ *
+ * Usage (insert #ifdef to use the same code for debug and prod):
+ *   long long cycles[large_number];
+ *   for(i = 0; i < large_number; i++) {
+ *     DBG_CYCLE_START(N)
+ *     cycles[i] = DBG_CYCLE(N);
+ *   }
+ *   qsort(cycles, large_number, sizeof(long long), &cmp);
+ *   long long tmp = cycles[large_number / 2];
+ *
+ *   for(i = 0; i < large_number; i++) {
+ *     DBG_CYCLE_START(N)
+ *     some_operations
+ *     cycles[i] = DBG_CYCLE(N);
+ *     other_operations
+ *   }
+ *   for(i = 0; i < large_number; i++)
+ *     cycles[i] -= tmp;
+ *   qsort(cycles, large_number, sizeof(long long), &cmp);
+ *   DBG_PRINTF1("Median CPU cycles spent in some_ops: %lld\n",
+ *               cycles[large_number / 2]);
  *
  * Theses macros are not for parallel programs. They are only
  * available on x86 and amd64 hardware.
  *
+ * When compiled on an ANSI C90 compiler, these cycle counter type is
+ * "long" instead of "long long".
+ *
  * @todo more architectures
  */
+
+#ifndef NDEBUG
+
+#if (defined(__STDC__) && defined(__STDC_VERSION__) \
+     && (__STDC_VERSION__ >= 199409L))
+#define _LL long long
+#else
+#define _LL long
+#endif
 
 #if (defined(__amd64__) || defined(__amd64) || defined(_M_X64))
 /* from http://predef.sourceforge.net/prearch.html#sec3 */
 
 /** CPU cycles counter for x86 */
-static long long _dbg_cpucycles(void)
+static _LL _dbg_cpucycles(void)
 {
-    long long result;
-    asm volatile (".byte 15;.byte 49":"=A" (result));
+    _LL result;
+    __asm__ volatile (".byte 15;.byte 49":"=A" (result));
     return result;
 }
 
@@ -170,18 +252,18 @@ static long long _dbg_cpucycles(void)
 /* from http://predef.sourceforge.net/prearch.html#sec6 */
 
 /** CPU cycles counter for amd64 */
-static long long _dbg_cpucycles(void)
+static _LL _dbg_cpucycles(void)
 {
-    unsigned long long result;
-    asm volatile (".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax":"=a"
-                  (result)::"%rdx");
+    unsigned _LL result;
+    __asm__ volatile (".byte 15;.byte 49;shlq $32,%%rdx;orq %%rdx,%%rax":"=a"
+                      (result)::"%rdx");
     return result;
 }
 
 #else
 
 /** dummy CPU cycles counter */
-static long long _dbg_cpucycles(void)
+static _LL _dbg_cpucycles(void)
 {
     return 0;
 }
@@ -192,7 +274,7 @@ static long long _dbg_cpucycles(void)
 #define DBG_CYCLE_NB 16
 
 /** cycle counter array, initialized to 0 */
-static long long _dbg_cycle_counter[DBG_CYCLE_NB];
+static _LL _dbg_cycle_counter[DBG_CYCLE_NB];
 
 /**
  * @brief reset a CPU cycle counter
@@ -219,20 +301,9 @@ static long long _dbg_cycle_counter[DBG_CYCLE_NB];
  */
 #define DBG_CYCLE(N) (_dbg_cycle_counter[N])
 
-#else                           /* !NDEBUG */
+#undef _LL
 
-#define DBG_PRINTF0(STR) {}
-#define DBG_PRINTF1(STR, A1) {}
-#define DBG_PRINTF2(STR, A1) {}
-#define DBG_PRINTF3(STR, A1) {}
-#define DBG_PRINTF4(STR, A1) {}
-
-#define DBG_CLOCK_NB 0;
-#define DBG_CLOCK_RESET(N) {}
-#define DBG_CLOCK_TOGGLE(N) {}
-#define DBG_CLOCK_START(N) {}
-#define DBG_CLOCK(N) (-1)
-#define DBG_CLOCK_S(N) (-1.)
+#else
 
 #define DBG_CYCLE_NB 0;
 #define DBG_CYCLE_RESET(N) {}
