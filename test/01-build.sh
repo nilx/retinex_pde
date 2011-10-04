@@ -25,13 +25,15 @@ _log make clean
 _log make
 
 echo "* compiler support"
-for CC in cc c++ gcc g++ tcc nwcc clang icc pathcc suncc; do
+for CC in cc c++ c99 gcc g++ tcc nwcc clang icc pathcc suncc; do
     which $CC || continue
     echo "* $CC compiler"
     _log make distclean
     case $CC in
 	"gcc"|"g++")
 	    _log make CC=$CC ;;
+	"c99")
+	    _log make CC=$CC CFLAGS=-DNDEBUG;;
 	"icc")
 	    # default icc behaviour is wrong divisions!
 	    _log make CC=$CC CFLAGS="-fp-model precise";;
