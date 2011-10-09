@@ -45,6 +45,6 @@ test	: $(SRC) $(HDR)
 	sh -e test/run.sh && echo SUCCESS || ( echo ERROR; return 1)
 
 # release tarball
-release	: beautify lint test distclean
+release	:
 	git archive --format=tar --prefix=$(PROJECT)-$(RELEASE_TAG)/ HEAD \
 	        | gzip > ../$(PROJECT)-$(RELEASE_TAG).tar.gz
