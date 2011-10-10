@@ -96,11 +96,11 @@
  * but the numbers may be wrong be if clock macros are called in parallel.
  *
  * Usage:
- *   DBG_CLOCK_RESET(N)
+ *   DBG_CLOCK_RESET(N);
  *   for(i = 0; i < large_number; i++) {
- *     DBG_CLOCK_TOGGLE(N)
+ *     DBG_CLOCK_TOGGLE(N);
  *     some_operations
- *     DBG_CLOCK_TOGGLE(N)
+ *     DBG_CLOCK_TOGGLE(N);
  *     other_operations
  *   }
  *   DBG_PRINTF1("CPU time spent in some_ops: %0.3fs\n", DBG_CLOCK_S(N));
@@ -184,11 +184,11 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  * the measure.
  *
  * Usage:
- *   DBG_CYCLE_RESET(N)
+ *   DBG_CYCLE_RESET(N);
  *   for(i = 0; i < large_number; i++) {
- *     DBG_CYCLE_STARTTOGGLE(N)
+ *     DBG_CYCLE_STARTTOGGLE(N);
  *     some_operations
- *     DBG_CLOCK_TOGGLE(N)
+ *     DBG_CLOCK_TOGGLE(N);
  *     other_operations
  *   }
  *   DBG_PRINTF1("Total CPU cycles spent in some_ops: %lld\n", DBG_CYCLE(N));
@@ -197,17 +197,17 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  * and remove the cost of the measure itself (median time between two
  * adjacent measures).
  *
- * Usage (insert #ifdef to use the same code for debug and prod):
+ * Usage:
  *   long long cycles[large_number];
  *   for(i = 0; i < large_number; i++) {
- *     DBG_CYCLE_START(N)
+ *     DBG_CYCLE_START(N);
  *     cycles[i] = DBG_CYCLE(N);
  *   }
  *   qsort(cycles, large_number, sizeof(long long), &cmp);
  *   long long tmp = cycles[large_number / 2];
  *
  *   for(i = 0; i < large_number; i++) {
- *     DBG_CYCLE_START(N)
+ *     DBG_CYCLE_START(N);
  *     some_operations
  *     cycles[i] = DBG_CYCLE(N);
  *     other_operations
@@ -217,6 +217,8 @@ static clock_t _dbg_clock_counter[DBG_CLOCK_NB];
  *   qsort(cycles, large_number, sizeof(long long), &cmp);
  *   DBG_PRINTF1("Median CPU cycles spent in some_ops: %lld\n",
  *               cycles[large_number / 2]);
+ *
+ * You can insert #ifdefs to use the same code for debug and prod.
  *
  * Theses macros are not for parallel programs. They are only
  * available on x86 and amd64 hardware.
