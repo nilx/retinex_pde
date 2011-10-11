@@ -46,11 +46,16 @@
  * DBG_PRINTF("entering function foo()\n");
  * DBG_PRINTF2("i=%i, j=%i\n", i, j);
  */
-#define DBG_PRINTF0(STR) {printf(STR);}
-#define DBG_PRINTF1(STR, A1) {printf(STR, A1);}
-#define DBG_PRINTF2(STR, A1, A2) {printf(STR, A1, A2);}
-#define DBG_PRINTF3(STR, A1, A2, A3) {printf(STR, A1, A2, A3);}
-#define DBG_PRINTF4(STR, A1, A2, A3, A4) {printf(STR, A1, A2, A3, A4);}
+#define DBG_PRINTF0(STR) \
+    { fprintf(stderr, STR); }
+#define DBG_PRINTF1(STR, A1) \
+    { fprintf(stderr, STR, A1); }
+#define DBG_PRINTF2(STR, A1, A2) \
+    { fprintf(stderr, STR, A1, A2); }
+#define DBG_PRINTF3(STR, A1, A2, A3) \
+    { fprintf(stderr, STR, A1, A2, A3); }
+#define DBG_PRINTF4(STR, A1, A2, A3, A4) \
+    { fprintf(stderr, STR, A1, A2, A3, A4); }
 
 #else
 
