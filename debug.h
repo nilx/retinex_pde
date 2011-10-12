@@ -27,6 +27,9 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+/* splint config */
+/*@ -fcnuse -varuse @*/
+
 #include <stdio.h>
 #include <time.h>
 
@@ -319,5 +322,7 @@ static _LL _dbg_cycle_counter[DBG_CYCLE_NB];
 #define DBG_CYCLE(N) (-1)
 
 #endif                          /* !NDEBUG */
+
+/*@ =fcnuse =varuse @*/
 
 #endif                          /* !_DEBUG_H */

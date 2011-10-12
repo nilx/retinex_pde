@@ -29,9 +29,9 @@ beautify	: $(SRC) $(HDR)
 # static code analysis and strict build
 lint	: $(SRC)
 	for FILE in $^; do \
-		clang --analyze -ansi -DNDEBUG -I. $$FILE || exit 1; done;
+		clang --analyze -ansi -UNDEBUG -I. $$FILE || exit 1; done;
 	for FILE in $^; do \
-		splint -ansi-lib -weak -DNDEBUG -I. $$FILE || exit 1; done;
+		splint -ansi-lib -weak -UNDEBUG -I. $$FILE || exit 1; done;
 	$(RM) *.plist
 	$(MAKE) -B CFLAGS="$(CFLAGS_STRICT)"
 
