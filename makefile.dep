@@ -1,0 +1,4 @@
+io_png.o: io_png.c io_png.h
+norm.o: norm.c norm.h
+retinex_pde_lib.o: retinex_pde_lib.c debug.h retinex_pde_lib.h
+retinex_pde.o: retinex_pde.c retinex_pde_lib.h io_png.h norm.h debug.h

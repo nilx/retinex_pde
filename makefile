@@ -7,21 +7,21 @@
 
 # source code
 SRC	= io_png.c norm.c retinex_pde_lib.c retinex_pde.c
-# headers-only code
-HDR	= debug.h
 # object files (partial compilation)
 OBJ	= $(SRC:.c=.o)
 # binary executable programs
 BIN	= retinex_pde
 
 # C compiler optimization options
-COPT	= -O3
+COPT	= -O2
 # complete C compiler options
 CFLAGS	= $(COPT)
 # preprocessor options
 CPPFLAGS	= -I. -DNDEBUG
 # linker options
-LDFLAGS	= -lpng -lfftw3f -lm
+LDFLAGS	=
+# libraries
+LDLIBS	= -lpng -lfftw3f -lm
 
 # uncomment this part to use the multi-threaded DCT
 #CPPFLAGS	+= -DFFTW_NTHREADS=8
@@ -30,13 +30,18 @@ LDFLAGS	= -lpng -lfftw3f -lm
 # default target: the binary executable programs
 default: $(BIN)
 
+# dependencies
+-include makefile.dep
+makefile.dep    : $(SRC)
+	$(CC) $(CPPFLAGS) -MM $^ > $@
+
 # partial C compilation xxx.c -> xxx.o
 %.o	: %.c
-	$(CC) -c -o $@ $< $(CFLAGS) $(CPPFLAGS)
+	$(CC) -c $(CFLAGS) $(CPPFLAGS) -o $@ $<
 
 # final link
 retinex_pde	: $(OBJ)
-	$(CC) $^ $(LDFLAGS) -o $@
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 # cleanup
 .PHONY	: clean distclean
