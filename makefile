@@ -32,8 +32,6 @@ default: $(BIN)
 
 # dependencies
 -include makefile.dep
-makefile.dep    : $(SRC)
-	$(CC) $(CPPFLAGS) -MM $^ > $@
 
 # partial C compilation xxx.c -> xxx.o
 %.o	: %.c
