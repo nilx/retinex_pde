@@ -47,6 +47,21 @@
 #include <png.h>
 #endif
 
+/* unified Windows detection */
+#if (defined(_WIN32) || defined(__WIN32__) \
+     || defined(__TOS_WIN__) || defined(__WINDOWS__))
+/* from http://predef.sourceforge.net/preos.html#sec25 */
+#ifndef WIN32
+#define WIN32
+#endif
+/*
+ * On windows systems, the streams mist be reset to binary mode with
+ * setmode() to avoid CRLF translation and other nasty side-effects.
+ */
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 /* ensure consistency */
 #include "io_png.h"
 
@@ -227,7 +242,7 @@ static float *_io_png_uchar2flt(const unsigned char *data, size_t size)
  *
  * See _io_png_byte2flt()
  */
-static float *_io_png_ushrt2flt(const unsigned char *data, size_t size)
+static float *_io_png_ushrt2flt(const unsigned short *data, size_t size)
 {
     _IO_PNG_ANY2FLT(USHRT_MAX);
 }
@@ -382,10 +397,17 @@ static float *_io_png_read(const char *fname,
     assert(NULL != fname && NULL != nxp && NULL != nyp && NULL != ncp);
 
     /* open the PNG input file */
-    if (0 == strcmp(fname, "-"))
+    if (0 == strcmp(fname, "-")) {
         fp = stdin;
-    else if (NULL == (fp = fopen(fname, "rb")))
-        _IO_PNG_ABORT("failed to open file");
+#ifdef WIN32                    /* set the stream to binary mode */
+        fflush(fp);
+        setmode(fileno(fp), O_BINARY);
+#endif
+    }
+    else {
+        if (NULL == (fp = fopen(fname, "rb")))
+            _IO_PNG_ABORT("failed to open file");
+    }
 
     /* read in some of the signature bytes and check this signature */
     if ((PNG_SIG_LEN != fread(png_sig, 1, PNG_SIG_LEN, fp))
@@ -496,7 +518,7 @@ static float *_io_png_read(const char *fname,
 }
 
 /**
- * @brief read a PNG file into a float array with some post-processing
+ * @brief read a PNG file into a float array with some options
  *
  * The image is read into an array with the deinterlaced channels,
  * with values in [0,1]. The option parameter is a string whose
@@ -511,9 +533,9 @@ static float *_io_png_read(const char *fname,
  * @param opt post-processing opt
  * @return pointer to an array of pixels, abort() on error
  */
-float *io_png_read_pp_flt(const char *fname,
-                          size_t * nxp, size_t * nyp, size_t * ncp,
-                          io_png_opt_t opt)
+float *io_png_read_flt_opt(const char *fname,
+                           size_t * nxp, size_t * nyp, size_t * ncp,
+                           io_png_opt_t opt)
 {
     float *flt_data;
     size_t nx, ny, nc;
@@ -546,19 +568,19 @@ float *io_png_read_pp_flt(const char *fname,
 float *io_png_read_flt(const char *fname,
                        size_t * nxp, size_t * nyp, size_t * ncp)
 {
-    return io_png_read_pp_flt(fname, nxp, nyp, ncp, IO_PNG_OPT_NONE);
+    return io_png_read_flt_opt(fname, nxp, nyp, ncp, IO_PNG_OPT_NONE);
 }
 
 /**
- * @brief read a PNG file into an unsigned char array with some post-processing
+ * @brief read a PNG file into an unsigned char array with some options
  *
  * The image is read into an array with the deinterlaced channels,
- * with values in [0,UCHAR_MAX]. See  io_png_read_pp_flt() for
+ * with values in [0,UCHAR_MAX]. See  io_png_read_flt_opt() for
  * details.
  */
-unsigned char *io_png_read_pp_uchar(const char *fname,
-                                    size_t * nxp, size_t * nyp, size_t * ncp,
-                                    io_png_opt_t opt)
+unsigned char *io_png_read_uchar_opt(const char *fname,
+                                     size_t * nxp, size_t * nyp, size_t * ncp,
+                                     io_png_opt_t opt)
 {
     float *flt_data;
     unsigned char *data;
@@ -594,19 +616,19 @@ unsigned char *io_png_read_pp_uchar(const char *fname,
 unsigned char *io_png_read_uchar(const char *fname,
                                  size_t * nxp, size_t * nyp, size_t * ncp)
 {
-    return io_png_read_pp_uchar(fname, nxp, nyp, ncp, IO_PNG_OPT_NONE);
+    return io_png_read_uchar_opt(fname, nxp, nyp, ncp, IO_PNG_OPT_NONE);
 }
 
 /**
- * @brief read a PNG file into an unsigned short array with some post-processing
+ * @brief read a PNG file into an unsigned short array with some options
  *
  * The image is read into an array with the deinterlaced channels,
- * with values in [0,USHRT_MAX]. See  io_png_read_pp_uchar() for
+ * with values in [0,USHRT_MAX]. See  io_png_read_uchar_opt() for
  * details.
  */
-unsigned short *io_png_read_pp_ushrt(const char *fname,
-                                     size_t * nxp, size_t * nyp, size_t * ncp,
-                                     io_png_opt_t opt)
+unsigned short *io_png_read_ushrt_opt(const char *fname,
+                                      size_t * nxp, size_t * nyp,
+                                      size_t * ncp, io_png_opt_t opt)
 {
     float *flt_data;
     unsigned short *data;
@@ -642,7 +664,7 @@ unsigned short *io_png_read_pp_ushrt(const char *fname,
 unsigned short *io_png_read_ushrt(const char *fname,
                                   size_t * nxp, size_t * nyp, size_t * ncp)
 {
-    return io_png_read_pp_ushrt(fname, nxp, nyp, ncp, IO_PNG_OPT_NONE);
+    return io_png_read_ushrt_opt(fname, nxp, nyp, ncp, IO_PNG_OPT_NONE);
 }
 
 /*
@@ -659,12 +681,15 @@ unsigned short *io_png_read_ushrt(const char *fname,
  * @param fname PNG file name, "-" means stdout
  * @param data non interlaced (RRRGGGBBBAAA) float image array
  * @param nx, ny, nc number of columns, lines and channels
+ * @param opt processing option, can be IO_PNG_OPT_ADAM7,
+ *         IO_PNG_OPT_ZMIN or IO_PNG_OPT_ZMAX,
+ *         IO_PNG_OPT_NONE to do nothing
  * @return void, abort() on error
  *
  * @todo handle 16bit
  */
 static void _io_png_write(const char *fname, const float *data,
-                          size_t nx, size_t ny, size_t nc)
+                          size_t nx, size_t ny, size_t nc, io_png_opt_t opt)
 {
     png_structp png_ptr;
     png_infop info_ptr;
@@ -674,7 +699,7 @@ static void _io_png_write(const char *fname, const float *data,
     float *tmp;
     /* volatile: because of setjmp/longjmp */
     FILE *volatile fp;
-    int color_type, interlace, compression, filter;
+    int color_type, interlace, compression, compression_level, filter;
     size_t i;
     /* error structure */
     _io_png_err_t err;
@@ -688,11 +713,17 @@ static void _io_png_write(const char *fname, const float *data,
     free(tmp);
 
     /* open the PNG output file */
-    if (0 == strcmp(fname, "-"))
+    if (0 == strcmp(fname, "-")) {
         fp = stdout;
-    else if (NULL == (fp = fopen(fname, "wb")))
-        _IO_PNG_ABORT("failed to open file");
-
+#ifdef WIN32                    /* set the stream to binary mode */
+        fflush(fp);
+        setmode(fileno(fp), O_BINARY);
+#endif
+    }
+    else {
+        if (NULL == (fp = fopen(fname, "wb")))
+            _IO_PNG_ABORT("failed to open file");
+    }
     /* allocate the row pointers */
     row_pointers = _IO_PNG_SAFE_MALLOC(ny, png_bytep);
 
@@ -732,13 +763,25 @@ static void _io_png_write(const char *fname, const float *data,
     default:
         _IO_PNG_ABORT("bad parameters");
     }
-    interlace = PNG_INTERLACE_ADAM7;
+
     compression = PNG_COMPRESSION_TYPE_BASE;
     filter = PNG_FILTER_TYPE_BASE;
+
+    interlace = PNG_INTERLACE_NONE;
+    if (opt & IO_PNG_OPT_ADAM7)
+        interlace = PNG_INTERLACE_ADAM7;
 
     /* set image header */
     png_set_IHDR(png_ptr, info_ptr, (png_uint_32) nx, (png_uint_32) ny,
                  bit_depth, color_type, interlace, compression, filter);
+
+    compression_level = 5;
+    if (opt & IO_PNG_OPT_ZMIN)
+        compression_level = 0;
+    if (opt & IO_PNG_OPT_ZMAX)
+        compression_level = 9;
+    png_set_compression_level(png_ptr, compression_level);
+
     /* TODO : significant bit (sBIT), gamma (gAMA) chunks */
     png_write_info(png_ptr, info_ptr);
 
@@ -761,7 +804,7 @@ static void _io_png_write(const char *fname, const float *data,
 }
 
 /**
- * @brief write a float array into a PNG file
+ * @brief write a float array into a PNG file with some options
  *
  * The array values are taken from the [0,1] interval and converted to
  * 8bit data.
@@ -771,12 +814,50 @@ static void _io_png_write(const char *fname, const float *data,
  * @param fname PNG file name
  * @param data deinterlaced (RRR.GGG.BBB.AAA.) array to write
  * @param nx, ny, nc number of columns, lines and channels of the image
+ * @param opt processing option, can be IO_PNG_OPT_ADAM7,
+ *         IO_PNG_OPT_ZMIN or IO_PNG_OPT_ZMAX,
+ *         IO_PNG_OPT_NONE to do nothing
  * @return void, abort() on error
+ */
+void io_png_write_flt_opt(const char *fname, const float *data,
+                          size_t nx, size_t ny, size_t nc, io_png_opt_t opt)
+{
+    _io_png_write(fname, data, nx, ny, nc, opt);
+    return;
+}
+
+/**
+ * @brief write a float array into a PNG file
+ *
+ * The array values are taken from the [0,1] interval and converted to
+ * 8bit data.
+ *
+ * @param fname PNG file name
+ * @param data deinterlaced (RRR.GGG.BBB.AAA.) array to write
+ * @param nx, ny, nc number of columns, lines and channels of the image
  */
 void io_png_write_flt(const char *fname, const float *data,
                       size_t nx, size_t ny, size_t nc)
 {
-    _io_png_write(fname, data, nx, ny, nc);
+    io_png_write_flt_opt(fname, data, nx, ny, nc, IO_PNG_OPT_NONE);
+    return;
+}
+
+/**
+ * @brief write an unsigned char array into a 8bit PNG file
+ *
+ * The array values are taken from the [0,UCHAR_MAX] interval and
+ * converted to float in the [0,1] interval before being saved as 8bit
+ * fixed-point data. See io_png_write_flt_opt() for details.
+ */
+void io_png_write_uchar_opt(const char *fname, const unsigned char *data,
+                            size_t nx, size_t ny, size_t nc, io_png_opt_t opt)
+{
+    float *flt_data;
+
+    flt_data = _io_png_uchar2flt(data, nx * ny * nc);
+    _io_png_write(fname, flt_data, nx, ny, nc, opt);
+    free(flt_data);
     return;
 }
 
@@ -795,10 +876,24 @@ void io_png_write_flt(const char *fname, const float *data,
 void io_png_write_uchar(const char *fname, const unsigned char *data,
                         size_t nx, size_t ny, size_t nc)
 {
+    io_png_write_uchar_opt(fname, data, nx, ny, nc, IO_PNG_OPT_NONE);
+    return;
+}
+
+/**
+ * @brief write an unsigned short array into a 8bit PNG file
+ *
+ * The array values are taken from the [0,USHRT_MAX] interval and
+ * converted to float in the [0,1] interval before being saved as 8bit
+ * fixed-point data. See io_png_write_flt_opt() for details.
+ */
+void io_png_write_ushrt_opt(const char *fname, const unsigned short *data,
+                            size_t nx, size_t ny, size_t nc, io_png_opt_t opt)
+{
     float *flt_data;
 
-    flt_data = _io_png_uchar2flt(data, nx * ny * nc);
-    _io_png_write(fname, flt_data, nx, ny, nc);
+    flt_data = _io_png_ushrt2flt(data, nx * ny * nc);
+    _io_png_write(fname, flt_data, nx, ny, nc, opt);
     free(flt_data);
     return;
 }
@@ -817,13 +912,9 @@ void io_png_write_uchar(const char *fname, const unsigned char *data,
  *
  * @todo save in 16bits
  */
-void io_png_write_ushrt(const char *fname, const unsigned char *data,
+void io_png_write_ushrt(const char *fname, const unsigned short *data,
                         size_t nx, size_t ny, size_t nc)
 {
-    float *flt_data;
-
-    flt_data = _io_png_ushrt2flt(data, nx * ny * nc);
-    _io_png_write(fname, flt_data, nx, ny, nc);
-    free(flt_data);
+    io_png_write_ushrt_opt(fname, data, nx, ny, nc, IO_PNG_OPT_NONE);
     return;
 }

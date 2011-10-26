@@ -7,7 +7,10 @@ _test_run() {
     TEMPFILE=$(tempfile)
     # 0.019607843137254902 = 5 / 255
     ./retinex_pde 0.019607843137254902 data/noisy.png $TEMPFILE
-    test "ddd2c38819d9d82bb5582317dfae95c3  $TEMPFILE" \
+    test "1c14b80cc282e40d31b707c70973e551  $TEMPFILE" \
+	= "$(md5sum $TEMPFILE)"
+    ./retinex_pde 0.019607843137254902 - - < data/noisy.png > $TEMPFILE
+    test "1c14b80cc282e40d31b707c70973e551  $TEMPFILE" \
 	= "$(md5sum $TEMPFILE)"
 }
 
