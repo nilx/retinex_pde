@@ -32,7 +32,8 @@ _log make clean
 _log make
 
 echo "* compiler support"
-for CC in cc c++ c89 c99 gcc g++ tcc nwcc clang icc pathcc suncc \
+#for CC in cc c++ c89 c99 gcc g++ tcc nwcc clang icc pathcc suncc \
+for CC in cc c++ c89 c99 gcc g++ tcc clang icc suncc \
     i586-mingw32msvc-cc; do
     which $CC || continue
     echo "* $CC compiler"
