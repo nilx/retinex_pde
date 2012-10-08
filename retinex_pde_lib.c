@@ -288,7 +288,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     }
 
     /* allocate the float tmp array */
-    if (NULL == (data_tmp = (float *) malloc(sizeof(float) * nx * ny))) {
+    if (NULL == (data_tmp = (float *) fftwf_malloc(sizeof(float) * nx * ny))) {
         fprintf(stderr, "allocation error\n");
         abort();
     }
@@ -297,7 +297,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
     (void) discrete_laplacian_threshold(data_tmp, data, nx, ny, t);
 
     /* allocate the float-complex FFT array */
-    if (NULL == (data_fft = (float *) malloc(sizeof(float) * nx * ny))) {
+    if (NULL == (data_fft = (float *) fftwf_malloc(sizeof(float) * nx * ny))) {
         fprintf(stderr, "allocation error\n");
         abort();
     }
@@ -319,7 +319,7 @@ float *retinex_pde(float *data, size_t nx, size_t ny, float t)
                                FFTW_ESTIMATE | FFTW_DESTROY_INPUT);
     fftwf_execute(dct_fw);
     DBG_CLOCK_TOGGLE(FOURIER);
-    free(data_tmp);
+    fftwf_free(data_tmp);
 
     /* solve the Poisson PDE in Fourier space */
     /* 1. / (float) (nx * ny)) is the DCT normalisation term, see libfftw */
